@@ -4,6 +4,10 @@
 
 use hidapi::{HidApi, HidDevice};
 
+use std::sync::{Arc, Mutex};
+
+ // Using this to only send the frame data to the frontend for the keyboard widget
+
 const VID: u16 = 0x048d;
 const PID: u16 = 0xc693;
 pub const NUM_ZONES: usize = 24;
@@ -77,17 +81,21 @@ impl Color {
     }
 }
 
+
 pub struct LedController {
     device: Option<HidDevice>,
     frame_buffer: [Color; NUM_ZONES],
+    ui_frame: Arc<Mutex<Vec<Color>>>, //frontend-visible frame
 }
 
 impl LedController {
-    pub fn new() -> Self {
+    pub fn new(ui_frame: Arc<Mutex<Vec<Color>>>) -> Self {
         LedController { 
             device: None, 
-            frame_buffer: [Color::black(); NUM_ZONES] 
+            frame_buffer: [Color::black(); NUM_ZONES],
+            ui_frame,
         }
+        
     }
 
     /// Connect to the RGB keyboard controller (interface 1)
@@ -186,6 +194,10 @@ impl LedController {
         
         buf.resize(PACKET_SIZE, 0);
         device.send_feature_report(&buf).map_err(|e| e.to_string())?;
+        let mut frame = self.ui_frame.lock().unwrap();
+        for i in start..=end{
+            frame[i as usize] = color;
+        }
         Ok(())
     }
     
@@ -260,6 +272,10 @@ impl LedController {
         
         // Send zones 16-23 (commit to apply all changes)
         self.send_zone_packet(16, &colors_16_23, true)?;
+
+        let mut frame = self.ui_frame.lock().unwrap();
+        frame.clear();
+        frame.extend_from_slice(&self.frame_buffer);
         
         Ok(())
     }
@@ -271,11 +287,7 @@ impl LedController {
     }
 }
 
-impl Default for LedController {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+
 
 // ===================================================================
 // TESTS
@@ -322,7 +334,8 @@ mod tests {
 
     #[test]
     fn test_buffer_operations() {
-        let mut controller = LedController::new();
+        let ui_frame = Arc::new(Mutex::new(vec![Color::black(); NUM_ZONES]));
+        let mut controller = LedController::new(ui_frame);
         
         controller.set_zone(0, Color::red());
         assert_eq!(controller.get_zone(0), Color::red());

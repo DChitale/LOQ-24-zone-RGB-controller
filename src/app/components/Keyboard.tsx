@@ -1,41 +1,66 @@
 "use client";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { invoke } from '@tauri-apps/api/tauri'
 import { motion } from 'framer-motion';
+
+interface Color {
+  r: number;
+  g: number;
+  b: number;
+}
 
 export default function KeyboardDisplay() {
   // 24 zones for the Lenovo LOQ
-  const [zones, setZones] = useState<string[]>(Array(24).fill("#1a1a1a"));
+  const [zones, setZones] = useState<string[]>(Array(24).fill("#000000"));
+
+  useEffect(() => {
+    // Helper to convert Rust Color struct to CSS rgb string
+    const toCssRgb = (c: Color) => `rgb(${c.r}, ${c.g}, ${c.b})`;
+
+    const updateLoop = async () => {
+      try {
+        // Fetch the frame from Rust Mutex
+        const frame = await invoke<Color[]>('get_frame');
+        
+        if (frame && frame.length === 24) {
+          setZones(frame.map(toCssRgb));
+        }
+      } catch (err) {
+        // Silently fail to avoid console spam during hot reloads
+        console.debug("Frame sync error:", err);
+      }
+    };
+
+    // 30 FPS update rate (approx 33ms)
+    const interval = setInterval(updateLoop, 33);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center w-full min-h-[500px] p-4 lg:p-12 select-none">
       
-      {/* WRAPPER ADJUSTMENTS:
-        - Aspect changed to 1280/510 to give room for protruding arrows.
-        - Overflow-hidden removed or handled carefully to prevent clipping the protrusion.
-      */}
       <div className="relative w-full max-w-[1280px] min-w-[640px] aspect-[1280/510] bg-[#050505] rounded-2xl border border-zinc-900 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
         
-        {/* LAYER 1: The Underglow 
-            Increased blur and slight vertical padding adjustment to reach the arrow zone.
-        */}
+        {/* LAYER 1: The Underglow */}
         <div className="absolute inset-0 flex px-1 pt-4 pb-2 justify-between items-stretch">
           {zones.map((color, i) => (
             <motion.div
               key={i}
               animate={{ 
                 backgroundColor: color,
-                boxShadow: `0 0 70px 25px ${color}10` 
+                // Using the color string directly for the glow
+                boxShadow: `0 0 70px 25px ${color.replace('rgb', 'rgba').replace(')', ', 0.1)')}` 
               }}
-              className="h-full flex-1 transition-all duration-700"
+              // Faster transition for real-time responsiveness
+              transition={{ duration: 0.1, ease: "linear" }}
+              className="h-full flex-1"
               style={{ filter: 'blur(18px)' }} 
             />
           ))}
         </div>
 
-        {/* LAYER 2: The Physical Keyboard PNG
-            Using 'object-bottom' so the main chassis sits at the base, 
-            letting the protrusion occupy the natural bottom space.
-        */}
+        {/* LAYER 2: The Physical Keyboard PNG */}
         <img 
           src="layout.png" 
           alt="Lenovo LOQ US Layout"
@@ -44,10 +69,10 @@ export default function KeyboardDisplay() {
 
         {/* LAYER 3: Interactive Hitboxes */}
         <div className="absolute inset-0 z-20 flex px-1 pt-4 pb-2">
-          {zones.map((_, i) => (
+          {zones.map((color, i) => (
             <button
               key={i}
-              onClick={() => console.log(`Zone ${i + 1} clicked`)}
+              onClick={() => console.log(`Zone ${i + 1} clicked`, color)}
               className="h-full flex-1 hover:bg-white/5 transition-colors group relative rounded-b-md"
             >
               <div className="absolute inset-x-0 bottom-6 flex justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
@@ -71,6 +96,11 @@ export default function KeyboardDisplay() {
         <div className="flex flex-col items-start">
           <span className="text-[8px] text-zinc-600 uppercase tracking-[0.3em] font-black">Geometry</span>
           <span className="text-[10px] text-zinc-400 font-mono">LOQ Offset-Arrow array</span>
+        </div>
+        <div className="h-6 w-px bg-zinc-800" />
+        <div className="flex flex-col items-start">
+          <span className="text-[8px] text-zinc-600 uppercase tracking-[0.3em] font-black">Backend</span>
+          <span className="text-[10px] text-zinc-400 font-mono">Connected via HID Mutex</span>
         </div>
       </div>
 
