@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/tauri'
 import { motion } from 'framer-motion';
+import { listen } from '@tauri-apps/api/event';
+
 
 interface Color {
   r: number;
@@ -14,55 +16,43 @@ export default function KeyboardDisplay() {
   const [zones, setZones] = useState<string[]>(Array(24).fill("#000000"));
 
   useEffect(() => {
-    // Helper to convert Rust Color struct to CSS rgb string
-    const toCssRgb = (c: Color) => `rgb(${c.r}, ${c.g}, ${c.b})`;
+    const unlisten = listen<Color[]>('new-colors', (event) => {
+      const frame = event.payload;
+      setZones(frame.map(c => `rgb(${c.r}, ${c.g}, ${c.b})`));
+    });
 
-    const updateLoop = async () => {
-      try {
-        // Fetch the frame from Rust Mutex
-        const frame = await invoke<Color[]>('get_frame');
-        
-        if (frame && frame.length === 24) {
-          setZones(frame.map(toCssRgb));
-        }
-      } catch (err) {
-        // Silently fail to avoid console spam during hot reloads
-        console.debug("Frame sync error:", err);
-      }
+    return () => {
+      unlisten.then(f => f());
     };
-
-    // 30 FPS update rate (approx 33ms)
-    const interval = setInterval(updateLoop, 33);
-    
-    return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="flex flex-col items-center justify-center w-full min-h-[500px] p-4 lg:p-12 select-none">
-      
+
       <div className="relative w-full max-w-[1280px] min-w-[640px] aspect-[1280/510] bg-[#050505] rounded-2xl border border-zinc-900 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
-        
+
         {/* LAYER 1: The Underglow */}
         <div className="absolute inset-0 flex px-1 pt-4 pb-2 justify-between items-stretch">
           {zones.map((color, i) => (
             <motion.div
               key={i}
-              animate={{ 
+              animate={{
                 backgroundColor: color,
                 // Using the color string directly for the glow
-                boxShadow: `0 0 70px 25px ${color.replace('rgb', 'rgba').replace(')', ', 0.1)')}` 
+                boxShadow: `0 0 2px 5px ${color.replace('rgb', 'rgba').replace(')', ', 0.1)')}`
+                //boxShadow: 'none'
               }}
               // Faster transition for real-time responsiveness
               transition={{ duration: 0.1, ease: "linear" }}
               className="h-full flex-1"
-              style={{ filter: 'blur(18px)' }} 
+              style={{ filter: 'blur(18px)' }}
             />
           ))}
         </div>
 
         {/* LAYER 2: The Physical Keyboard PNG */}
-        <img 
-          src="layout.png" 
+        <img
+          src="layout.png"
           alt="Lenovo LOQ US Layout"
           className="absolute inset-0 z-10 w-full h-full object-contain object-bottom pointer-events-none drop-shadow-2xl"
         />
@@ -73,11 +63,11 @@ export default function KeyboardDisplay() {
             <button
               key={i}
               onClick={() => console.log(`Zone ${i + 1} clicked`, color)}
-              className="h-full flex-1 hover:bg-white/5 transition-colors group relative rounded-b-md"
+              className="h-full flex-1 hover:bg-white/20 transition-colors group relative rounded-b-md"
             >
               <div className="absolute inset-x-0 bottom-6 flex justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
                 <span className="bg-zinc-950/90 text-[8px] font-mono text-zinc-500 px-2 py-1 rounded border border-zinc-800 shadow-xl tracking-tighter">
-                  ZONE {String(i + 1).padStart(2, '0')}
+                  -/{String(i + 1).padStart(2, '0')}
                 </span>
               </div>
             </button>

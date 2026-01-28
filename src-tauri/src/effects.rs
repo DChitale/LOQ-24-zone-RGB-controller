@@ -108,7 +108,12 @@ impl Effect for BreathingEffect {
         let brightness = ((time * self.speed * std::f32::consts::PI * 2.0).sin() + 1.0) / 2.0;
         let scaled_color = self.color.scale(brightness);
         
-        // Use command 0x05 for efficiency
+        // Update the internal frame buffer for all zones
+        for i in 0..NUM_ZONES {
+            controller.set_zone(i, scaled_color);
+        }
+        
+        // Send to hardware using command 0x05 for efficiency
         let _ = controller.set_all_instant(scaled_color);
     }
     

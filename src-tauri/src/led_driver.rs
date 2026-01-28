@@ -149,6 +149,11 @@ impl LedController {
         &self.frame_buffer
     }
     
+    /// Get the frame buffer as a Vec (useful for cloning/sending to frontend)
+    pub fn get_buffer_vec(&self) -> Vec<Color> {
+        self.frame_buffer.to_vec()
+    }
+    
     /// Set the entire frame buffer
     pub fn set_buffer(&mut self, buffer: [Color; NUM_ZONES]) {
         self.frame_buffer = buffer;
@@ -172,7 +177,7 @@ impl LedController {
     /// * `start` - Starting zone (0-23)
     /// * `end` - Ending zone (0-23)
     /// * `color` - RGB color to apply
-    pub fn set_range(&self, start: u8, end: u8, color: Color) -> Result<(), String> {
+    pub fn set_range(&mut self, start: u8, end: u8, color: Color) -> Result<(), String> {
         if start > 23 || end > 23 || start > end {
             return Err(format!("Invalid zone range: {}-{}", start, end));
         }
@@ -194,6 +199,13 @@ impl LedController {
         
         buf.resize(PACKET_SIZE, 0);
         device.send_feature_report(&buf).map_err(|e| e.to_string())?;
+        
+        // Update internal frame buffer to keep state synchronized
+        for i in start..=end {
+            self.frame_buffer[i as usize] = color;
+        }
+        
+        // Update frontend-visible frame
         let mut frame = self.ui_frame.lock().unwrap();
         for i in start..=end{
             frame[i as usize] = color;
@@ -202,7 +214,7 @@ impl LedController {
     }
     
     /// Set all zones to a single color instantly using command 0x05
-    pub fn set_all_instant(&self, color: Color) -> Result<(), String> {
+    pub fn set_all_instant(&mut self, color: Color) -> Result<(), String> {
         self.set_range(0, 23, color)
     }
 

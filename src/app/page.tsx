@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/tauri'; // Use the official import
 import KeyboardDisplay from '@/app/components/Keyboard';
-
+import PresetControls from '@/app/components/setter';
 export default function Home() {
   const [status, setStatus] = useState("Initializing...");
 
@@ -26,7 +26,8 @@ export default function Home() {
     <main>
       <h1>LOQ RGB Controller</h1>
       <p>Status: {status}</p>
-      {/* <KeyboardDisplay /> */}
+      <KeyboardDisplay />
+      <PresetControls />
       
     </main>
   );
