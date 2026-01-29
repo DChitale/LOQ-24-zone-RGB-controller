@@ -44,7 +44,22 @@ pub enum ParameterValue {
 }
 
 pub fn get_available_presets() -> Vec<PresetMetadata> {
-    vec![
+    vec![PresetMetadata {
+            name: "staticColor".to_string(),
+            display_name: "Static Color".to_string(),
+            description: "Set a static color from 16,581,375 gradients of color".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "color".to_string(),
+                    label: "Color".to_string(),
+                    param_type: ParameterType::Color { r: 255, g: 255, b: 200},
+                    min: 0.1,
+                    max: 3.0,
+                    default: 0.5,
+                    step: 0.1,
+                },
+            ],
+        },
         PresetMetadata {
             name: "pulse".to_string(),
             display_name: "Pulse Center".to_string(),
@@ -134,6 +149,102 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
                 },
             ],
         },
+        PresetMetadata {
+            name: "ocean".to_string(),
+            display_name: "Ocean Wave".to_string(),
+            description: "Looks like rolling water across the keyboard.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.01,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "energyPulse".to_string(),
+            display_name: "Energy Pulse".to_string(),
+            description: "Feels fast and punchy without being noisy.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.01,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "nebula".to_string(),
+            display_name: "Nebula".to_string(),
+            description: "Soft, atmospheric, zero harsh transitions.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.01,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "fireFlow".to_string(),
+            display_name: "Fire Flow".to_string(),
+            description: "Looks alive. Surprisingly cheap to compute.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.01,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "chromaticBreath".to_string(),
+            display_name: "Chromatic Breath".to_string(),
+            description: "Extremely clean, perfect for idle mode.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.01,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "silk".to_string(),
+            display_name: "Silk".to_string(),
+            description: "Feels like light breathing through fabric, Slow hue drift + heavy smoothing.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.01,
+                },
+            ],
+        },
     ]
 }
 
@@ -157,3 +268,10 @@ pub mod heatwave;
 pub mod sparkle;
 pub mod aurora;
 pub mod keyRipple;
+pub mod ocean;
+pub mod energyPulse;
+pub mod nebula;
+pub mod chromaticBreath;
+pub mod fireFlow;
+pub mod silk;
+pub mod staticColor;

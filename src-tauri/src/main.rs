@@ -13,6 +13,13 @@ use crate::presets::{
     heatwave::HeatWaveEffect,
     scan::ColorScanEffect,
     sparkle::SparkleEffect,
+    ocean::OceanWaveEffect,
+    energyPulse::EnergyPulseEffect,
+    nebula::NebulaEffect,
+    chromaticBreath::ChromaticBreathEffect,
+    fireFlow::FireFlowEffect,
+    silk::SilkAmbientEffect,
+    staticColor::StaticEffect,
     PresetConfig, ParameterValue
 };
 use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
@@ -78,6 +85,12 @@ fn set_preset(preset_name: String, parameters: std::collections::HashMap<String,
 
     // Create new effect based on preset name
     let new_effect: Box<dyn Effect> = match preset_config.name.as_str() {
+        "staticColor" => {
+            let color = preset_config.parameters.get("color")
+                .and_then(|v| match v { ParameterValue::Color { r,g,b} => Some(Color::new(*r, *g, *b)), _ => None })
+                .unwrap_or(Color::new(255, 255, 200));
+            Box::new(crate::presets::staticColor::StaticEffect::new(color))
+        }
         "pulse" => {
             let speed = preset_config.parameters.get("speed")
                 .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
@@ -111,6 +124,43 @@ fn set_preset(preset_name: String, parameters: std::collections::HashMap<String,
                 .unwrap_or(0.1);
             Box::new(SparkleEffect::new(density))
         },
+        "ocean" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(1.0);
+            Box::new(crate::presets::ocean::OceanWaveEffect::new(speed))
+        },
+        "energyPulse" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(1.0);
+            Box::new(crate::presets::energyPulse::EnergyPulseEffect::new(speed))
+        },
+        "nebula" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(1.0);
+            Box::new(crate::presets::nebula::NebulaEffect::new(speed))
+        }
+        "chromaticBreath" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(1.0);
+            Box::new(crate::presets::chromaticBreath::ChromaticBreathEffect::new(speed))
+        }
+        "fireFlow" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(1.0);
+            Box::new(crate::presets::fireFlow::FireFlowEffect::new(speed))
+        }
+        "silk" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(1.0);
+            Box::new(crate::presets::silk::SilkAmbientEffect::new(speed))
+        }
+
         _ => return Err(format!("Unknown preset: {}", preset_config.name)),
     };
 
@@ -168,7 +218,12 @@ fn run_universal_effect_loop(app_handle: tauri::AppHandle) {
                     last_update = now;
 
                     let mut controller = state.controller.lock().unwrap();
-                    effect.update(&mut controller, time, delta);
+                    // if(effect.is_static){
+                    //     continue;
+                    // }else{
+                        effect.update(&mut controller, time, delta);
+                    //}
+                    
                 }
             }
 
@@ -186,7 +241,8 @@ fn run_universal_effect_loop(app_handle: tauri::AppHandle) {
             }
 
             // Yield to OS at target FPS (60 FPS = 16.67ms per frame)
-            tokio::time::sleep(Duration::from_millis(16)).await;
+            // 18ms set for better performance
+            tokio::time::sleep(Duration::from_millis(18)).await;
         }
     });
 }

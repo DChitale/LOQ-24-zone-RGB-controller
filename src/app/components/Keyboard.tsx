@@ -77,7 +77,7 @@ export default function KeyboardDisplay() {
       </div>
 
       {/* Info Footer */}
-      <div className="mt-12 flex items-center gap-8 opacity-40 hover:opacity-100 transition-opacity duration-500">
+      {/* <div className="mt-12 flex items-center gap-8 opacity-40 hover:opacity-100 transition-opacity duration-500">
         <div className="flex flex-col items-start">
           <span className="text-[8px] text-zinc-600 uppercase tracking-[0.3em] font-black">Resolution</span>
           <span className="text-[10px] text-zinc-400 font-mono">1280x480 (1:1 Native)</span>
@@ -92,7 +92,7 @@ export default function KeyboardDisplay() {
           <span className="text-[8px] text-zinc-600 uppercase tracking-[0.3em] font-black">Backend</span>
           <span className="text-[10px] text-zinc-400 font-mono">Connected via HID Mutex</span>
         </div>
-      </div>
+      </div> */}
 
     </div>
   );

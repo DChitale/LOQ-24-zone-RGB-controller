@@ -6,6 +6,9 @@ use crate::led_driver::{LedController, Color, NUM_ZONES};
 
 /// Effect trait that all effects must implement
 pub trait Effect: Send {
+
+    //const is_static: bool = false;
+
     /// Called once when the effect is activated
     fn start(&mut self) {}
     

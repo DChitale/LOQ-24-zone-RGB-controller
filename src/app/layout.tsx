@@ -9,7 +9,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* 'flex-1' takes all remaining horizontal space.
             'relative' allows the keyboard to scale within it.
         */}
-        <main className="flex-1 relative overflow-hidden">
+        <main style={{ height: '100vh', overflowY: 'auto', width: '100vw' }}>
           {children}
         </main>
       </body>

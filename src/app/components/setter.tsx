@@ -2,37 +2,12 @@
 import { invoke } from '@tauri-apps/api/tauri';
 import { useState, useEffect } from 'react';
 
-interface ParameterConfig {
-  name: string;
-  label: string;
-  param_type: ParameterType;
-  min: number;
-  max: number;
-  default: number;
-  step: number;
-}
-
-interface ParameterType {
-  type: string;
-  [key: string]: any; // For Color type: r, g, b properties
-}
-
-interface PresetMetadata {
-  name: string;
-  display_name: string;
-  description: string;
-  parameters: ParameterConfig[];
-}
-
-interface ParameterValue {
-  type: string;
-  value: number | { r: number; g: number; b: number };
-}
-
-interface PresetConfig {
-  name: string;
-  parameters: { [key: string]: ParameterValue };
-}
+// ... (Interfaces remain identical to your original code)
+interface ParameterConfig { name: string; label: string; param_type: ParameterType; min: number; max: number; default: number; step: number; }
+interface ParameterType { type: string; [key: string]: any; }
+interface PresetMetadata { name: string; display_name: string; description: string; parameters: ParameterConfig[]; }
+interface ParameterValue { type: string; value: number | { r: number; g: number; b: number }; }
+interface PresetConfig { name: string; parameters: { [key: string]: ParameterValue }; }
 
 export default function PresetControls() {
   const [presets, setPresets] = useState<PresetMetadata[]>([]);
@@ -47,7 +22,6 @@ export default function PresetControls() {
   const loadPresets = async () => {
     try {
       const presetData: PresetMetadata[] = await invoke('get_preset_metadata');
-      console.log('Loaded presets:', presetData);
       setPresets(presetData);
       setLoading(false);
     } catch (error) {
@@ -60,37 +34,28 @@ export default function PresetControls() {
     const preset = presets.find(p => p.name === presetName);
     if (!preset) return;
 
-    console.log('Selecting preset:', presetName, preset);
-
-    // Initialize parameter values with defaults
     const initialValues: { [key: string]: any } = {};
     preset.parameters.forEach(param => {
-      console.log('Processing parameter:', param);
       if (param.param_type.type === 'Float') {
         initialValues[param.name] = param.default;
       } else if (param.param_type.type === 'Color') {
-        // For color parameters, use the default color from the param_type
         const colorData = param.param_type as any;
         initialValues[param.name] = { 
           r: colorData.r || 255, 
           g: colorData.g || 0, 
           b: colorData.b || 0 
         };
-        console.log('Color parameter initialized:', param.name, initialValues[param.name]);
       }
     });
 
-    console.log('Initial parameter values:', initialValues);
     setParameterValues(initialValues);
     setCurrentPreset(presetName);
 
-    // Create preset config
     const config: PresetConfig = {
       name: presetName,
       parameters: {}
     };
 
-    // Convert parameter values to ParameterValue format
     Object.entries(initialValues).forEach(([key, value]) => {
       if (typeof value === 'number') {
         config.parameters[key] = { type: 'Float', value };
@@ -100,21 +65,16 @@ export default function PresetControls() {
     });
 
     try {
-      await invoke('set_preset', { 
-        presetName: presetName,
-        parameters: config.parameters
-      });
+      await invoke('set_preset', { presetName, parameters: config.parameters });
     } catch (error) {
       console.error('Failed to set preset:', error);
     }
   };
 
   const updateParameter = async (paramName: string, value: any) => {
-    console.log('Updating parameter:', paramName, value);
     const newValues = { ...parameterValues, [paramName]: value };
     setParameterValues(newValues);
 
-    // Convert to ParameterValue format
     let paramValue: ParameterValue;
     if (typeof value === 'number') {
       paramValue = { type: 'Float', value };
@@ -125,13 +85,11 @@ export default function PresetControls() {
     }
 
     try {
-      console.log('Sending parameter update to backend:', { presetName: currentPreset, paramName, value: paramValue });
       await invoke('adjust_preset_parameter', {
         presetName: currentPreset,
-        paramName: paramName,
+        paramName,
         value: paramValue
       });
-      console.log('Parameter update sent successfully');
     } catch (error) {
       console.error('Failed to adjust parameter:', error);
     }
@@ -139,47 +97,41 @@ export default function PresetControls() {
 
   const renderParameterControl = (param: ParameterConfig) => {
     const currentValue = parameterValues[param.name];
-    console.log('Rendering parameter control:', param.name, 'current value:', currentValue, 'all values:', parameterValues);
 
     if (param.param_type.type === 'Float') {
       return (
         <div key={param.name} className="space-y-2">
-          <label className="text-sm font-medium text-zinc-300">{param.label}</label>
+          <div className="flex justify-between">
+            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">{param.label}</label>
+            <span className="text-xs text-zinc-500">{(currentValue ?? param.default).toFixed(2)}</span>
+          </div>
           <input
             type="range"
             min={param.min}
             max={param.max}
             step={param.step}
-            value={currentValue !== undefined ? currentValue : param.default}
-            onChange={(e) => {
-              console.log('Range input changed:', param.name, e.target.value);
-              updateParameter(param.name, parseFloat(e.target.value));
-            }}
-            className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer slider"
+            value={currentValue ?? param.default}
+            onChange={(e) => updateParameter(param.name, parseFloat(e.target.value))}
+            className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
           />
-          <div className="text-xs text-zinc-500 text-center">
-            {(currentValue !== undefined ? currentValue : param.default)?.toFixed(2)}
-          </div>
         </div>
       );
     } else if (param.param_type.type === 'Color') {
       const colorValue = currentValue ? `#${currentValue.r.toString(16).padStart(2, '0')}${currentValue.g.toString(16).padStart(2, '0')}${currentValue.b.toString(16).padStart(2, '0')}` : '#ff0000';
-      console.log('Color value for', param.name, ':', colorValue);
       return (
         <div key={param.name} className="space-y-2">
-          <label className="text-sm font-medium text-zinc-300">{param.label}</label>
+          <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">{param.label}</label>
           <input
             type="color"
             value={colorValue}
             onChange={(e) => {
-              console.log('Color input changed:', param.name, e.target.value);
               const hex = e.target.value;
               const r = parseInt(hex.slice(1, 3), 16);
               const g = parseInt(hex.slice(3, 5), 16);
               const b = parseInt(hex.slice(5, 7), 16);
               updateParameter(param.name, { r, g, b });
             }}
-            className="w-full h-10 bg-zinc-700 border border-zinc-600 rounded cursor-pointer"
+            className="w-full h-8 bg-zinc-800 border-none rounded cursor-pointer"
           />
         </div>
       );
@@ -189,66 +141,81 @@ export default function PresetControls() {
 
   if (loading) {
     return (
-      <div className="w-full max-w-lg p-6 bg-zinc-950/50 rounded-3xl border border-zinc-900">
-        <div className="text-center text-zinc-400">Loading presets...</div>
+      <div className="w-full max-w-4xl p-12 text-center text-zinc-500 animate-pulse">
+        Initializing Engine...
       </div>
     );
   }
 
   const currentPresetData = presets.find(p => p.name === currentPreset);
-  console.log('Current preset:', currentPreset, 'Data:', currentPresetData);
-  console.log('Current parameter values:', parameterValues);
 
   return (
-    <div className="w-full max-w-lg p-6 bg-zinc-950/50 rounded-3xl border border-zinc-900 animate-in fade-in duration-500">
-      <div className="flex items-center gap-4 mb-6">
-        <div className="text-zinc-500 text-sm">🎨</div>
-        <h2 className="text-sm font-bold tracking-[0.4em] uppercase">Effect Presets</h2>
-      </div>
-
-      {/* Preset Selection */}
-      <div className="space-y-4 mb-6">
-        <label className="text-sm font-medium text-zinc-300">Select Preset</label>
-        <div className="grid grid-cols-2 gap-2">
-          {presets.map((preset) => (
-            <button
-              key={preset.name}
-              onClick={() => selectPreset(preset.name)}
-              className={`p-3 rounded-xl text-xs font-medium transition-all ${
-                currentPreset === preset.name
-                  ? 'bg-white text-black'
-                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-              }`}
-            >
-              {preset.display_name}
-            </button>
-          ))}
+    <div className="flex flex-col md:flex-row gap-6 w-full max-w-5xl mx-auto p-4 overflow-y-auto min-h-screen">
+      {/* LEFT COLUMN: PARAMETERS */}
+      <div className="flex-1 min-h-[400px] p-6 bg-zinc-950/40 rounded-3xl border border-zinc-900 backdrop-blur-sm">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+          <h2 className="text-xs font-bold tracking-[0.3em] uppercase text-zinc-100">Adjustments</h2>
         </div>
-      </div>
 
-      {/* Parameter Controls */}
-      {currentPresetData && currentPresetData.parameters.length > 0 && (
-        <div className="space-y-4">
-          <div className="text-sm text-zinc-400 mb-2">
-            {currentPresetData.description}
+        {currentPresetData ? (
+          <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-500">
+            <div>
+              <h3 className="text-lg font-medium text-white">{currentPresetData.display_name}</h3>
+              <p className="text-sm text-zinc-500 mt-1">{currentPresetData.description}</p>
+            </div>
+            
+            <div className="space-y-6">
+              {currentPresetData.parameters.length > 0 ? (
+                currentPresetData.parameters.map(renderParameterControl)
+              ) : (
+                <div className="text-zinc-600 italic text-sm py-10 text-center border border-dashed border-zinc-800 rounded-2xl">
+                  No adjustable parameters for this effect.
+                </div>
+              )}
+            </div>
           </div>
-          {currentPresetData.parameters.map(renderParameterControl)}
-        </div>
-      )}
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-2">
+            <span className="text-2xl">👈</span>
+            <p className="text-sm">Select a preset to begin</p>
+          </div>
+        )}
+      </div>
 
-      {/* No parameters message */}
-      {currentPresetData && currentPresetData.parameters.length === 0 && (
-        <div className="text-center text-zinc-500 text-sm py-4">
-          No adjustable parameters for this preset
-        </div>
-      )}
+      {/* RIGHT COLUMN: PRESET SELECTION */}
+      <div className="w-full md:w-80 space-y-4">
+        <div className="p-6 bg-zinc-900/50 rounded-3xl border border-zinc-800">
+          <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4">
+            Master Library
+          </label>
+          
+          <div className="relative">
+            <select
+              value={currentPreset}
+              onChange={(e) => selectPreset(e.target.value)}
+              className="w-full bg-zinc-800 text-zinc-100 text-sm rounded-xl px-4 py-3 appearance-none border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-white/10 transition-all cursor-pointer"
+            >
+              <option value="" disabled>Choose an effect...</option>
+              {presets.map((preset) => (
+                <option key={preset.name} value={preset.name}>
+                  {preset.display_name}
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500 text-xs">
+              ▼
+            </div>
+          </div>
 
-      {/* Debug info */}
-      {currentPresetData && (
-        <div className="text-xs text-zinc-600 mt-4 p-2 bg-zinc-800 rounded">
-          Debug: {currentPresetData.parameters.length} parameters found
+          <div className="mt-6 pt-6 border-t border-zinc-800/50">
+             <div className="flex justify-between text-[10px] text-zinc-600 uppercase font-bold tracking-tighter">
+                <span>Status</span>
+                <span className="text-zinc-400">{currentPreset ? 'Active' : 'Standby'}</span>
+             </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
