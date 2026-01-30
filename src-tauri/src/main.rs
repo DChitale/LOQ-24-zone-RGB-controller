@@ -20,6 +20,9 @@ use crate::presets::{
     fireFlow::FireFlowEffect,
     silk::SilkAmbientEffect,
     staticColor::StaticEffect,
+    edgeGlow::LiquidEdgeEffect,
+    stillGradient::StillGradientEffect,
+    //thermalStatus::ThermalStatusEffect,
     PresetConfig, ParameterValue
 };
 use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
@@ -160,6 +163,24 @@ fn set_preset(preset_name: String, parameters: std::collections::HashMap<String,
                 .unwrap_or(1.0);
             Box::new(crate::presets::silk::SilkAmbientEffect::new(speed))
         }
+        "edgeGlow" => {
+            Box::new(crate::presets::edgeGlow::LiquidEdgeEffect::new())
+        }
+        "stillGradient" => {
+            let color_a = preset_config.parameters.get("color_a")
+                .and_then(|v| match v { ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)), _ => None})
+                .unwrap_or(Color::new(89, 108, 128));
+            let color_b = preset_config.parameters.get("color_b")
+                .and_then(|v| match v { ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)), _ => None})
+                .unwrap_or(Color::new(88, 75, 118));
+            let middle = preset_config.parameters.get("middle")
+                .and_then(|v| match v { ParameterValue::Float(i) => Some(*i), _ => None})
+                .unwrap_or(12.0);
+            Box::new(crate::presets::stillGradient::StillGradientEffect::new(color_a, color_b, middle))
+        }
+        // "thermalStatus" => {
+        //     Box::new(crate::presets::thermalStatus::ThermalStatusEffect::new())
+        // }
 
         _ => return Err(format!("Unknown preset: {}", preset_config.name)),
     };

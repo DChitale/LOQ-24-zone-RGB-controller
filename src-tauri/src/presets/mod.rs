@@ -245,6 +245,72 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
                 },
             ],
         },
+        PresetMetadata {
+            name: "egdeGlow".to_string(),
+            display_name: "Liquid Edge Glow".to_string(),
+            description: "Looks like light leaking from under glass, Center is calm, edges gently alive".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "none".to_string(),
+                    label: "No adjustments available".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.0,
+                    max: 0.0,
+                    default: 0.0,
+                    step: 0.0,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "thermalStatus".to_string(),
+            display_name: "Thermal Situation".to_string(),
+            description: "Left => CPU, Right => GPU".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "none".to_string(),
+                    label: "No adjustments available".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.0,
+                    max: 0.0,
+                    default: 0.0,
+                    step: 0.0,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "stillGradient".to_string(),
+            display_name: "Still Gradient".to_string(),
+            description: "Just perfectly distributed light, This is peak minimalism".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "color_a".to_string(),
+                    label: "Color A".to_string(),
+                    param_type: ParameterType::Color {r: 89, g: 108, b: 128},
+                    min: 0.0,
+                    max: 0.0,
+                    default: 0.0,
+                    step: 0.0,
+                },
+                ParameterConfig {
+                    name: "color_b".to_string(),
+                    label: "Color B".to_string(),
+                    param_type: ParameterType::Color { r: 88, g: 75, b: 115 },
+                    min: 0.0,  // Not used for colors
+                    max: 255.0, // Not used for colors
+                    default: 0.0, // Not used for colors
+                    step: 1.0, // Not used for colors
+                },
+                ParameterConfig {
+                    name: "middle".to_string(),
+                    label: "Set the gradient mix".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.0,  // Not used for colors
+                    max: 24.0, // Not used for colors
+                    default: 12.0, // Not used for colors
+                    step: 1.0, // Not used for colors
+                },
+            ],
+        },
     ]
 }
 
@@ -275,3 +341,6 @@ pub mod chromaticBreath;
 pub mod fireFlow;
 pub mod silk;
 pub mod staticColor;
+pub mod edgeGlow;
+pub mod stillGradient;
+//pub mod thermalStatus;
