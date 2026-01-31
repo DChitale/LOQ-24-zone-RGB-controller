@@ -30,3 +30,28 @@ html, body {
 #__next, #root {
   min-height: 100vh;
 }
+
+/* Custom Scrollbar Theme */
+::-webkit-scrollbar {
+  width: 6px;  /* Vertical scrollbar width */
+  height: 6px; /* Horizontal scrollbar height */
+}
+
+::-webkit-scrollbar-track {
+  background: #050505; /* Matches your body background */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #18181b; /* Zinc-900: subtle contrast */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #27272a; /* Zinc-800: slight highlight on hover */
+}
+
+/* For Firefox support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #18181b #050505;
+}

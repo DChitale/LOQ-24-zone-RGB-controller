@@ -22,6 +22,16 @@ use crate::presets::{
     staticColor::StaticEffect,
     edgeGlow::LiquidEdgeEffect,
     stillGradient::StillGradientEffect,
+    rainbowWave::RainbowWaveEffect,
+    rainbowCycle::RainbowCycleEffect,
+    breathing::ColorBreathEffect,
+    rainbowBreath::RainbowBreathEffect,
+    wheel::ColorWheelEffect,
+    sweep::RgbSweepEffect,
+    off::OffEffect,
+    horse::HorseEffect,
+    horseCycle::SmoothHorseCycleEffect,
+    rpm::FerrariRpmEffect,
     //thermalStatus::ThermalStatusEffect,
     PresetConfig, ParameterValue
 };
@@ -94,6 +104,74 @@ fn set_preset(preset_name: String, parameters: std::collections::HashMap<String,
                 .unwrap_or(Color::new(255, 255, 200));
             Box::new(crate::presets::staticColor::StaticEffect::new(color))
         }
+        "off" => {
+            Box::new(OffEffect::new())
+        }
+        "rainbowCycle" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _=> None })
+                .unwrap_or(1.0);
+            Box::new(RainbowCycleEffect::new(speed))
+        }
+        "rainbowWave" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _=> None })
+                .unwrap_or(1.0);
+            Box::new(RainbowWaveEffect::new(speed))
+        }
+        "sweep" => {
+            Box::new(RgbSweepEffect::new())
+        }
+        "rainbowBreath" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _=> None })
+                .unwrap_or(1.0);
+            Box::new(RainbowBreathEffect::new(speed))
+        }
+        "breathing" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(1.0);
+            let color = preset_config.parameters.get("color")
+                .and_then(|v| match v { ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)), _ => None })
+                .unwrap_or(Color::new(255, 0, 0));
+            Box::new(ColorBreathEffect::new(color, speed))
+        },
+        "horse" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(1.0);
+            let length = preset_config.parameters.get("length")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(3.0);
+            let base_color = preset_config.parameters.get("base_color")
+                .and_then(|v| match v { ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)), _ => None })
+                .unwrap_or(Color::new(20, 20, 25));
+
+            let horse_color = preset_config.parameters.get("horse_color")
+                .and_then(|v| match v { ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)), _ => None })
+                .unwrap_or(Color::new(120, 140, 180));
+
+            Box::new(HorseEffect::new(speed, length, base_color, horse_color))
+        },
+        "horseCycle" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(1.0);
+            let length = preset_config.parameters.get("length")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(3.0);
+
+            Box::new(SmoothHorseCycleEffect::new(speed, length))
+        },
+        "rpm" => {
+            
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(3.0);
+
+            Box::new(FerrariRpmEffect::new(speed))
+        },
         "pulse" => {
             let speed = preset_config.parameters.get("speed")
                 .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
@@ -102,6 +180,12 @@ fn set_preset(preset_name: String, parameters: std::collections::HashMap<String,
                 .and_then(|v| match v { ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)), _ => None })
                 .unwrap_or(Color::new(255, 0, 0));
             Box::new(PulseCenterEffect::new(color, speed))
+        },
+        "wheel" => {
+            let speed = preset_config.parameters.get("speed")
+                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+                .unwrap_or(0.5);
+            Box::new(ColorWheelEffect::new(speed))
         },
         "aurora" => {
             let speed = preset_config.parameters.get("speed")
@@ -262,8 +346,8 @@ fn run_universal_effect_loop(app_handle: tauri::AppHandle) {
             }
 
             // Yield to OS at target FPS (60 FPS = 16.67ms per frame)
-            // 18ms set for better performance
-            tokio::time::sleep(Duration::from_millis(18)).await;
+            // 32ms set for better performance
+            tokio::time::sleep(Duration::from_millis(40)).await;
         }
     });
 }

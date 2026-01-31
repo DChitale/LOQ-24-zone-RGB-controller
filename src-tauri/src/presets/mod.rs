@@ -61,6 +61,37 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
             ],
         },
         PresetMetadata {
+            name: "off".to_string(),
+            display_name: "Off".to_string(),
+            description: "Turn off all lighting".to_string(),
+            parameters: vec![],
+        },
+        PresetMetadata {
+            name: "breathing".to_string(),
+            display_name: "Color Breath".to_string(),
+            description: "Fade in → fade out.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 5.0,
+                    default: 1.0,
+                    step: 0.1,
+                },
+                ParameterConfig {
+                    name: "color".to_string(),
+                    label: "Color".to_string(),
+                    param_type: ParameterType::Color { r: 255, g: 0, b: 0 },
+                    min: 0.0,  // Not used for colors
+                    max: 255.0, // Not used for colors
+                    default: 0.0, // Not used for colors
+                    step: 1.0, // Not used for colors
+                },
+            ],
+        },
+        PresetMetadata {
             name: "pulse".to_string(),
             display_name: "Pulse Center".to_string(),
             description: "Pulsing effect from center".to_string(),
@@ -85,6 +116,170 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
                 },
             ],
         },
+        PresetMetadata {
+            name: "horse".to_string(),
+            display_name: "Horse Color".to_string(),
+            description: "A sharp chaser segment racing across a solid base color — fast, focused, and minimal.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 5.0,
+                    step: 0.1,
+                },
+                ParameterConfig {
+                    name: "length".to_string(),
+                    label: "Length".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 5.0,
+                    step: 0.1,
+                },
+                ParameterConfig {
+                    name: "base_color".to_string(),
+                    label: "Base Color".to_string(),
+                    param_type: ParameterType::Color { r: 81, g: 169, b: 158 },
+                    min: 0.0,  // Not used for colors
+                    max: 255.0, // Not used for colors
+                    default: 0.0, // Not used for colors
+                    step: 1.0, // Not used for colors
+                },
+                ParameterConfig {
+                    name: "horse_color".to_string(),
+                    label: "Horse Color".to_string(),
+                    param_type: ParameterType::Color { r: 255, g: 0, b: 0 },
+                    min: 0.0,  // Not used for colors
+                    max: 255.0, // Not used for colors
+                    default: 0.0, // Not used for colors
+                    step: 1.0, // Not used for colors
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "horseCycle".to_string(),
+            display_name: "Horse Cycle".to_string(),
+            description: "A racing chaser over a smoothly color-cycling base, blending calm ambience with high-energy motion.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 5.0,
+                    step: 0.1,
+                },
+                ParameterConfig {
+                    name: "length".to_string(),
+                    label: "Length".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 5.0,
+                    step: 0.1,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "rpm".to_string(),
+            display_name: "Ferrari RPM".to_string(),
+            description: "Ferrari-like = fast, aggressive, red-dominant, precision motion — not rainbow fluff.".to_string(),
+            parameters: vec![
+                // ParameterConfig {
+                //     name: "phase".to_string(),
+                //     label: "Phase".to_string(),
+                //     param_type: ParameterType::Float,
+                //     min: 0.1,
+                //     max: 10.0,
+                //     default: 2.0,
+                //     step: 0.1,
+                // },
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.1,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "rainbowBreath".to_string(),
+            display_name: "Rainbow Breath".to_string(),
+            description: "Whole keyboard breathes through rainbow hues".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.01,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "rainbowCycle".to_string(),
+            display_name: "Rainbow Cycle".to_string(),
+            description: "Whole keyboard cycles through hues together.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.01,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "rainbowWave".to_string(),
+            display_name: "Rainbow Wave".to_string(),
+            description: "Left → right rainbow motion.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.01,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "wheel".to_string(),
+            display_name: "ColorWheelEffect".to_string(),
+            description: "Each zone has a fixed hue offset → whole keyboard spins like a wheel".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 3.0,
+                    default: 0.5,
+                    step: 0.1,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "sweep".to_string(),
+            display_name: "Color sweep".to_string(),
+            description: "Cycles through all 16.7 million colors one per frame, completing a full loop in about 3.5 days.".to_string(),
+            parameters: vec![],
+        },
+        
         PresetMetadata {
             name: "aurora".to_string(),
             display_name: "Aurora".to_string(),
@@ -328,6 +523,7 @@ pub fn adjust_preset_parameter(_preset_name: String, _param_name: String, _value
     Ok(())
 }
 
+pub mod off;
 pub mod pulse;
 pub mod scan;
 pub mod heatwave;
@@ -343,4 +539,13 @@ pub mod silk;
 pub mod staticColor;
 pub mod edgeGlow;
 pub mod stillGradient;
+pub mod rainbowCycle;
+pub mod rainbowWave;
+pub mod breathing;
+pub mod rainbowBreath;
+pub mod wheel;
+pub mod sweep;
+pub mod horse;
+pub mod horseCycle;
+pub mod rpm;
 //pub mod thermalStatus;

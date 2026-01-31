@@ -30,7 +30,7 @@
       {
         "title": "driver",
         "width": 900,
-        "height": 800,
+        "height": 600,
         "resizable": true,
         "minWidth": 740,
         "minHeight": 540

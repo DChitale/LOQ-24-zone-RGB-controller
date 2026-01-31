@@ -8,10 +8,10 @@ export default function ClassySidebar() {
   const pathname = usePathname();
 
   const navLinks = [
-    { id: 'Design', path: '/', icon: <Paintbrush size={18} /> },
-    { id: 'Hardware', path: '/settings', icon: <Cpu size={18} /> },
+    { id: 'Home', path: '/', icon: <Paintbrush size={18} /> },
+    { id: 'Hardware', path: '/hardware', icon: <Cpu size={18} /> },
     { id: 'Console', path: '/console', icon: <Terminal size={18} /> },
-    { id: 'Settings', path: '/hardwae', icon: <Settings size={18} /> },
+    { id: 'Settings', path: '/settings', icon: <Settings size={18} /> },
   ];
 
   return (
