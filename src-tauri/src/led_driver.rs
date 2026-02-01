@@ -62,12 +62,26 @@ impl Color {
         };
         Color::new((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
     }
-    
+
+    /// Legacy linear scale (kept for unit tests / internal uses)
     pub fn scale(&self, brightness: f32) -> Self {
         Color::new(
             (self.r as f32 * brightness.clamp(0.0, 1.0)) as u8,
             (self.g as f32 * brightness.clamp(0.0, 1.0)) as u8,
             (self.b as f32 * brightness.clamp(0.0, 1.0)) as u8,
+        )
+    }
+
+    /// Perceptual brightness scaling to apply as the FINAL pass before HID write.
+    /// Uses a simple gamma approximation (gamma = 2.2): multiplier = b^(1/2.2).
+    /// This keeps perceived brightness approximately linear to the slider.
+    pub fn perceptual_scale(&self, brightness: f32) -> Self {
+        let b = brightness.clamp(0.0, 1.0);
+        let m = if b <= 0.0 { 0.0 } else { b.powf(1.0 / 2.2) };
+        Color::new(
+            (self.r as f32 * m).round().clamp(0.0, 255.0) as u8,
+            (self.g as f32 * m).round().clamp(0.0, 255.0) as u8,
+            (self.b as f32 * m).round().clamp(0.0, 255.0) as u8,
         )
     }
     
@@ -86,6 +100,7 @@ pub struct LedController {
     device: Option<HidDevice>,
     frame_buffer: [Color; NUM_ZONES],
     ui_frame: Arc<Mutex<Vec<Color>>>, //frontend-visible frame
+    brightness: f32, // global brightness (0.0 - 1.0), applied as final pass
 }
 
 impl LedController {
@@ -94,6 +109,7 @@ impl LedController {
             device: None, 
             frame_buffer: [Color::black(); NUM_ZONES],
             ui_frame,
+            brightness: 1.0,
         }
         
     }
@@ -116,6 +132,16 @@ impl LedController {
         }
         
         Err("LED device not found on interface 1".to_string())
+    }
+
+    /// Set global brightness (0.0 - 1.0). This is applied only when writing to the device/UI frame.
+    pub fn set_brightness(&mut self, b: f32) {
+        self.brightness = b.clamp(0.0, 1.0);
+    }
+
+    /// Read current global brightness
+    pub fn brightness(&self) -> f32 {
+        self.brightness
     }
 
     /// Check if the controller is connected
@@ -183,6 +209,9 @@ impl LedController {
         }
         
         let device = self.device.as_ref().ok_or("Not connected")?;
+
+        // Compute perceptually-scaled color for the device/UI (do NOT replace logical buffer)
+        let scaled = color.perceptual_scale(self.brightness);
         
         let mut buf = vec![
             0x05,     // Command: Vendor lighting
@@ -191,24 +220,24 @@ impl LedController {
             0x00,     // Reserved (must be zero)
             end,      // End zone index
             0x00,     // Reserved (must be zero)
-            color.r,  // Red (0-255)
-            color.g,  // Green (0-255)
-            color.b,  // Blue (0-255)
+            scaled.r,  // Red (0-255)
+            scaled.g,  // Green (0-255)
+            scaled.b,  // Blue (0-255)
             0x01,     // Apply/Commit (1 = apply immediately)
         ];
         
         buf.resize(PACKET_SIZE, 0);
         device.send_feature_report(&buf).map_err(|e| e.to_string())?;
         
-        // Update internal frame buffer to keep state synchronized
+        // Update internal frame buffer (logical color) to keep state synchronized
         for i in start..=end {
             self.frame_buffer[i as usize] = color;
         }
         
-        // Update frontend-visible frame
+        // Update frontend-visible frame with SCALED colors so the UI matches the device
         let mut frame = self.ui_frame.lock().unwrap();
         for i in start..=end{
-            frame[i as usize] = color;
+            frame[i as usize] = scaled;
         }
         Ok(())
     }
@@ -267,7 +296,7 @@ impl LedController {
     /// Sends all 24 zones in 3 packets (8 zones each)
     /// The last packet has the commit flag set to apply changes
     pub fn flush_buffered(&self) -> Result<(), String> {
-        // Prepare color arrays for each packet
+        // Prepare color arrays for each packet (logical colors)
         let mut colors_0_7 = [Color::black(); 8];
         let mut colors_8_15 = [Color::black(); 8];
         let mut colors_16_23 = [Color::black(); 8];
@@ -275,19 +304,31 @@ impl LedController {
         colors_0_7.copy_from_slice(&self.frame_buffer[0..8]);
         colors_8_15.copy_from_slice(&self.frame_buffer[8..16]);
         colors_16_23.copy_from_slice(&self.frame_buffer[16..24]);
-        
-        // Send zones 0-7 (no commit)
-        self.send_zone_packet(0, &colors_0_7, false)?;
-        
-        // Send zones 8-15 (no commit)
-        self.send_zone_packet(8, &colors_8_15, false)?;
-        
-        // Send zones 16-23 (commit to apply all changes)
-        self.send_zone_packet(16, &colors_16_23, true)?;
 
+        // Create SCALED copies for sending (perceptual scaling)
+        let mut scaled_0_7 = [Color::black(); 8];
+        let mut scaled_8_15 = [Color::black(); 8];
+        let mut scaled_16_23 = [Color::black(); 8];
+
+        for i in 0..8 {
+            scaled_0_7[i] = colors_0_7[i].perceptual_scale(self.brightness);
+            scaled_8_15[i] = colors_8_15[i].perceptual_scale(self.brightness);
+            scaled_16_23[i] = colors_16_23[i].perceptual_scale(self.brightness);
+        }
+
+        // Send zones using SCALED data
+        self.send_zone_packet(0, &scaled_0_7, false)?;
+        self.send_zone_packet(8, &scaled_8_15, false)?;
+        self.send_zone_packet(16, &scaled_16_23, true)?;
+
+        // Update frontend-visible frame with SCALED colors (so UI matches device)
         let mut frame = self.ui_frame.lock().unwrap();
         frame.clear();
-        frame.extend_from_slice(&self.frame_buffer);
+        frame.extend_from_slice(&[
+            scaled_0_7[0], scaled_0_7[1], scaled_0_7[2], scaled_0_7[3], scaled_0_7[4], scaled_0_7[5], scaled_0_7[6], scaled_0_7[7],
+            scaled_8_15[0], scaled_8_15[1], scaled_8_15[2], scaled_8_15[3], scaled_8_15[4], scaled_8_15[5], scaled_8_15[6], scaled_8_15[7],
+            scaled_16_23[0], scaled_16_23[1], scaled_16_23[2], scaled_16_23[3], scaled_16_23[4], scaled_16_23[5], scaled_16_23[6], scaled_16_23[7],
+        ]);
         
         Ok(())
     }
@@ -334,6 +375,15 @@ mod tests {
         let white = Color::white();
         let half = white.scale(0.5);
         assert!(half.r > 120 && half.r < 130);
+    }
+
+    #[test]
+    fn test_perceptual_scale() {
+        // perceptual scaling at 0.5 should be noticeably brighter than linear 0.5
+        let white = Color::white();
+        let p = white.perceptual_scale(0.5);
+        // Expect approx 186 (0.5^(1/2.2) * 255 ≈ 186)
+        assert!(p.r > 180 && p.r < 195, "perceptual scale produced {}", p.r);
     }
 
     #[test]

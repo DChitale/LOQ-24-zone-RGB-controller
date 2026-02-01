@@ -98,6 +98,50 @@ fn save_settings(settings: settings::AppSettings) -> Result<String, String> {
 }
 
 #[tauri::command]
+fn set_brightness(brightness: f32, state: State<AppState>) -> Result<String, String> {
+    let b = brightness.clamp(0.0, 1.0);
+
+    // persist
+    let mut s = settings::load_settings().map_err(|e| e.to_string())?;
+    s.brightness_level = b;
+    settings::save_settings(&s).map_err(|e| e.to_string())?;
+
+    // apply to controller state and update UI immediately (do NOT fail the command if device is disconnected)
+    let mut applied_to_device = false;
+    {
+        let mut controller = state.controller.lock().unwrap();
+        controller.set_brightness(b);
+
+        // Update the frontend-visible frame from the logical buffer so UI reflects the change even if HID is absent
+        let scaled_frame: Vec<led_driver::Color> = controller
+            .get_buffer_vec()
+            .iter()
+            .map(|c| c.perceptual_scale(b))
+            .collect();
+
+        *state.ui_frame.lock().unwrap() = scaled_frame.clone();
+
+        // best-effort: try to send to device; if not connected, attempt to connect once
+        if !controller.is_connected() {
+            let _ = controller.connect();
+        }
+
+        if controller.is_connected() {
+            if controller.flush_buffered().is_ok() {
+                applied_to_device = true;
+            }
+        }
+    }
+
+    // UI listeners will observe the updated `ui_frame` on the next universal-loop tick.
+    if applied_to_device {
+        Ok("Brightness updated and sent to device".to_string())
+    } else {
+        Ok("Brightness updated (device not connected; UI preview applied)".to_string())
+    }
+}
+
+#[tauri::command]
 fn get_frame(state: State<AppState>) -> Vec<Color> {
     state.ui_frame.lock().unwrap().clone()
 }
@@ -576,6 +620,7 @@ fn main() {
             uninstall_startup_task,
             get_settings,
             save_settings,
+            set_brightness,
             get_frame,
             //test_set_red,
             get_preset_metadata,
@@ -622,6 +667,10 @@ fn main() {
             {
                 let mut controller = state.controller.lock().unwrap();
                 let _ = controller.connect();
+
+                // apply persisted brightness immediately so UI/device match on launch
+                controller.set_brightness(settings.brightness_level);
+                let _ = controller.flush_buffered();
             }
 
             // START THE UNIVERSAL EFFECT LOOP (works with any effect)

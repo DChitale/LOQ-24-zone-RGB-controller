@@ -207,14 +207,16 @@ impl EffectPlaylist {
 #[cfg(test)]
 mod examples {
     use super::*;
-    use crate::led_driver::{LedController, Color};
+    use crate::led_driver::{LedController, Color, NUM_ZONES};
     use crate::effects::{SolidEffect, RainbowWaveEffect, BreathingEffect};
+    use std::sync::{Arc, Mutex};
     
     #[test]
     #[ignore] // Requires actual hardware
     fn example_basic_usage() {
         // Create and connect controller
-        let mut controller = LedController::new();
+        let ui_frame = Arc::new(Mutex::new(vec![Color::black(); NUM_ZONES]));
+        let mut controller = LedController::new(ui_frame.clone());
         controller.connect().expect("Failed to connect");
         
         // Create runner
@@ -234,7 +236,8 @@ mod examples {
     #[test]
     #[ignore] // Requires actual hardware
     fn example_playlist() {
-        let mut controller = LedController::new();
+        let ui_frame = Arc::new(Mutex::new(vec![Color::black(); NUM_ZONES]));
+        let mut controller = LedController::new(ui_frame.clone());
         controller.connect().expect("Failed to connect");
         
         let mut playlist = EffectPlaylist::new(controller, 30).expect("Failed to create playlist");
@@ -252,7 +255,8 @@ mod examples {
     #[test]
     #[ignore] // Requires actual hardware
     fn example_manual_loop() {
-        let mut controller = LedController::new();
+        let ui_frame = Arc::new(Mutex::new(vec![Color::black(); NUM_ZONES]));
+        let mut controller = LedController::new(ui_frame.clone());
         controller.connect().expect("Failed to connect");
         
         let mut runner = EffectRunner::new(controller, 30).expect("Failed to create runner");

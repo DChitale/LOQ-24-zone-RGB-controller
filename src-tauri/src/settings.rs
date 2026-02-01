@@ -13,6 +13,9 @@ pub struct AppSettings {
     
     /// Fix lighting priority when app launches
     pub fix_on_app_launch: bool,
+
+    #[serde(default = "default_brightness_level")]
+    pub brightness_level: f32,
 }
 
 impl Default for AppSettings {
@@ -21,9 +24,13 @@ impl Default for AppSettings {
             auto_fix_on_startup: false,  // Disabled by default - user must opt-in
             startup_delay_seconds: 60,
             fix_on_app_launch: true,
+            brightness_level: 1.0,
         }
     }
 }
+
+/// Default value for `brightness_level` used by serde's `default` attribute
+fn default_brightness_level() -> f32 { 1.0 }
 
 /// Get the path to the settings file
 fn get_settings_path() -> Result<PathBuf, Box<dyn std::error::Error>> {

@@ -7,7 +7,10 @@ interface AppSettings {
     auto_fix_on_startup: boolean;
     startup_delay_seconds: number;
     fix_on_app_launch: boolean;
+    brightness_level?: number;
 }
+
+
 
 export default function SettingsPage() {
     const [settings, setSettings] = useState<AppSettings>({
@@ -261,6 +264,8 @@ export default function SettingsPage() {
                                             <span>300s</span>
                                         </div>
                                     </div>
+
+
                                 </div>
                             )}
 

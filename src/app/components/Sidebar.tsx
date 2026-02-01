@@ -3,6 +3,7 @@ import { Circle, Cpu, Paintbrush, Settings, Terminal } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { VerticalBrightness } from "@/app/components/brightness";
 
 export default function ClassySidebar() {
   const pathname = usePathname();
@@ -43,6 +44,14 @@ export default function ClassySidebar() {
             </span>
           </Link>
         ))}
+        
+
+          {/* This container will now grow and shrink with the window */}
+          <div className="my-2 h-1/2 w-full flex items-center justify-center">
+            <VerticalBrightness />
+          </div>
+
+          
       </nav>
     </aside>
   );
