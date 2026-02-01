@@ -1,43 +1,53 @@
-#![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
+#![cfg_attr(
+    all(not(debug_assertions), target_os = "windows"),
+    windows_subsystem = "windows"
+)]
 
-mod led_driver;
-mod effects;
 mod effect_runner;
+mod effects;
+mod installer;
+mod led_driver;
+mod lighting;
 mod presets;
+mod settings;
 
-use crate::led_driver::{LedController, Color};
 use crate::effects::Effect;
+use crate::led_driver::{Color, LedController};
 use crate::presets::{
-    pulse::PulseCenterEffect,
     aurora::AuroraEffect,
-    heatwave::HeatWaveEffect,
-    scan::ColorScanEffect,
-    sparkle::SparkleEffect,
-    ocean::OceanWaveEffect,
-    energyPulse::EnergyPulseEffect,
-    nebula::NebulaEffect,
-    chromaticBreath::ChromaticBreathEffect,
-    fireFlow::FireFlowEffect,
-    silk::SilkAmbientEffect,
-    staticColor::StaticEffect,
-    edgeGlow::LiquidEdgeEffect,
-    stillGradient::StillGradientEffect,
-    rainbowWave::RainbowWaveEffect,
-    rainbowCycle::RainbowCycleEffect,
     breathing::ColorBreathEffect,
-    rainbowBreath::RainbowBreathEffect,
-    wheel::ColorWheelEffect,
-    sweep::RgbSweepEffect,
-    off::OffEffect,
+    chromaticBreath::ChromaticBreathEffect,
+    edgeGlow::LiquidEdgeEffect,
+    energyPulse::EnergyPulseEffect,
+    fireFlow::FireFlowEffect,
+    heatwave::HeatWaveEffect,
     horse::HorseEffect,
     horseCycle::SmoothHorseCycleEffect,
+    nebula::NebulaEffect,
+    ocean::OceanWaveEffect,
+    off::OffEffect,
+    pulse::PulseCenterEffect,
+    rainbowBreath::RainbowBreathEffect,
+    rainbowCycle::RainbowCycleEffect,
+    rainbowWave::RainbowWaveEffect,
     rpm::FerrariRpmEffect,
+    scan::ColorScanEffect,
+    silk::SilkAmbientEffect,
+    sparkle::SparkleEffect,
+    staticColor::StaticEffect,
+    stillGradient::StillGradientEffect,
+    sweep::RgbSweepEffect,
+    wheel::ColorWheelEffect,
+    ParameterValue,
     //thermalStatus::ThermalStatusEffect,
-    PresetConfig, ParameterValue
+    PresetConfig,
 };
-use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 use std::collections::HashMap;
-use tauri::{Manager, SystemTray, SystemTrayMenu, CustomMenuItem, SystemTrayEvent, State};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
+use tauri::{CustomMenuItem, Manager, State, SystemTray, SystemTrayEvent, SystemTrayMenu};
 
 const NUM_ZONES: usize = 24;
 
@@ -50,6 +60,44 @@ pub struct AppState {
 }
 
 #[tauri::command]
+fn set_lighting_priority() -> Result<String, String> {
+    lighting::set_windows_lighting_on_top()
+        .map(|_| "Windows Dynamic Lighting Controller set to top priority.".to_string())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn check_startup_installed() -> bool {
+    installer::is_startup_task_installed()
+}
+
+#[tauri::command]
+fn install_startup_task(delay_seconds: u32) -> Result<String, String> {
+    installer::create_startup_task(delay_seconds)
+        .map(|_| "Startup task installed successfully.".to_string())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn uninstall_startup_task() -> Result<String, String> {
+    installer::remove_startup_task()
+        .map(|_| "Startup task unistalled successfully.".to_string())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_settings() -> Result<settings::AppSettings, String> {
+    settings::load_settings().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn save_settings(settings: settings::AppSettings) -> Result<String, String> {
+    settings::save_settings(&settings)
+        .map(|_| "Settings saved successfully.".to_string())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn get_frame(state: State<AppState>) -> Vec<Color> {
     state.ui_frame.lock().unwrap().clone()
 }
@@ -57,7 +105,7 @@ fn get_frame(state: State<AppState>) -> Vec<Color> {
 #[tauri::command]
 fn test_set_red(state: State<AppState>) -> Result<(), String> {
     let mut controller = state.controller.lock().unwrap();
-    
+
     // Ensure connection before writing
     if !controller.is_connected() {
         controller.connect()?;
@@ -73,7 +121,11 @@ fn get_preset_metadata() -> Vec<crate::presets::PresetMetadata> {
 }
 
 #[tauri::command]
-fn set_preset(preset_name: String, parameters: std::collections::HashMap<String, ParameterValue>, state: State<AppState>) -> Result<String, String> {
+fn set_preset(
+    preset_name: String,
+    parameters: std::collections::HashMap<String, ParameterValue>,
+    state: State<AppState>,
+) -> Result<String, String> {
     let preset_config = PresetConfig {
         name: preset_name,
         parameters,
@@ -99,173 +151,314 @@ fn set_preset(preset_name: String, parameters: std::collections::HashMap<String,
     // Create new effect based on preset name
     let new_effect: Box<dyn Effect> = match preset_config.name.as_str() {
         "staticColor" => {
-            let color = preset_config.parameters.get("color")
-                .and_then(|v| match v { ParameterValue::Color { r,g,b} => Some(Color::new(*r, *g, *b)), _ => None })
+            let color = preset_config
+                .parameters
+                .get("color")
+                .and_then(|v| match v {
+                    ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)),
+                    _ => None,
+                })
                 .unwrap_or(Color::new(255, 255, 200));
             Box::new(crate::presets::staticColor::StaticEffect::new(color))
         }
-        "off" => {
-            Box::new(OffEffect::new())
-        }
+        "off" => Box::new(OffEffect::new()),
         "rainbowCycle" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _=> None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
             Box::new(RainbowCycleEffect::new(speed))
         }
         "rainbowWave" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _=> None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
             Box::new(RainbowWaveEffect::new(speed))
         }
-        "sweep" => {
-            Box::new(RgbSweepEffect::new())
-        }
+        "sweep" => Box::new(RgbSweepEffect::new()),
         "rainbowBreath" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _=> None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
             Box::new(RainbowBreathEffect::new(speed))
         }
         "breathing" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
-            let color = preset_config.parameters.get("color")
-                .and_then(|v| match v { ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)), _ => None })
+            let color = preset_config
+                .parameters
+                .get("color")
+                .and_then(|v| match v {
+                    ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)),
+                    _ => None,
+                })
                 .unwrap_or(Color::new(255, 0, 0));
             Box::new(ColorBreathEffect::new(color, speed))
-        },
+        }
         "horse" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
-            let length = preset_config.parameters.get("length")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let length = preset_config
+                .parameters
+                .get("length")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(3.0);
-            let base_color = preset_config.parameters.get("base_color")
-                .and_then(|v| match v { ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)), _ => None })
+            let base_color = preset_config
+                .parameters
+                .get("base_color")
+                .and_then(|v| match v {
+                    ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)),
+                    _ => None,
+                })
                 .unwrap_or(Color::new(20, 20, 25));
 
-            let horse_color = preset_config.parameters.get("horse_color")
-                .and_then(|v| match v { ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)), _ => None })
+            let horse_color = preset_config
+                .parameters
+                .get("horse_color")
+                .and_then(|v| match v {
+                    ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)),
+                    _ => None,
+                })
                 .unwrap_or(Color::new(120, 140, 180));
 
             Box::new(HorseEffect::new(speed, length, base_color, horse_color))
-        },
+        }
         "horseCycle" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
-            let length = preset_config.parameters.get("length")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let length = preset_config
+                .parameters
+                .get("length")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(3.0);
 
             Box::new(SmoothHorseCycleEffect::new(speed, length))
-        },
+        }
         "rpm" => {
-            
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(3.0);
 
             Box::new(FerrariRpmEffect::new(speed))
-        },
+        }
         "pulse" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
-            let color = preset_config.parameters.get("color")
-                .and_then(|v| match v { ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)), _ => None })
+            let color = preset_config
+                .parameters
+                .get("color")
+                .and_then(|v| match v {
+                    ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)),
+                    _ => None,
+                })
                 .unwrap_or(Color::new(255, 0, 0));
             Box::new(PulseCenterEffect::new(color, speed))
-        },
+        }
         "wheel" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(0.5);
             Box::new(ColorWheelEffect::new(speed))
-        },
+        }
         "aurora" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(0.5);
             Box::new(AuroraEffect::new(speed))
-        },
+        }
         "heatwave" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
             Box::new(HeatWaveEffect::new(speed))
-        },
+        }
         "scan" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
             Box::new(ColorScanEffect::new(speed))
-        },
+        }
         "sparkle" => {
-            let density = preset_config.parameters.get("density")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let density = preset_config
+                .parameters
+                .get("density")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(0.1);
             Box::new(SparkleEffect::new(density))
-        },
+        }
         "ocean" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
             Box::new(crate::presets::ocean::OceanWaveEffect::new(speed))
-        },
+        }
         "energyPulse" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
             Box::new(crate::presets::energyPulse::EnergyPulseEffect::new(speed))
-        },
+        }
         "nebula" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
             Box::new(crate::presets::nebula::NebulaEffect::new(speed))
         }
         "chromaticBreath" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
-            Box::new(crate::presets::chromaticBreath::ChromaticBreathEffect::new(speed))
+            Box::new(crate::presets::chromaticBreath::ChromaticBreathEffect::new(
+                speed,
+            ))
         }
         "fireFlow" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
             Box::new(crate::presets::fireFlow::FireFlowEffect::new(speed))
         }
         "silk" => {
-            let speed = preset_config.parameters.get("speed")
-                .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None })
+            let speed = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
                 .unwrap_or(1.0);
             Box::new(crate::presets::silk::SilkAmbientEffect::new(speed))
         }
-        "edgeGlow" => {
-            Box::new(crate::presets::edgeGlow::LiquidEdgeEffect::new())
-        }
+        "edgeGlow" => Box::new(crate::presets::edgeGlow::LiquidEdgeEffect::new()),
         "stillGradient" => {
-            let color_a = preset_config.parameters.get("color_a")
-                .and_then(|v| match v { ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)), _ => None})
+            let color_a = preset_config
+                .parameters
+                .get("color_a")
+                .and_then(|v| match v {
+                    ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)),
+                    _ => None,
+                })
                 .unwrap_or(Color::new(89, 108, 128));
-            let color_b = preset_config.parameters.get("color_b")
-                .and_then(|v| match v { ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)), _ => None})
+            let color_b = preset_config
+                .parameters
+                .get("color_b")
+                .and_then(|v| match v {
+                    ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)),
+                    _ => None,
+                })
                 .unwrap_or(Color::new(88, 75, 118));
-            let middle = preset_config.parameters.get("middle")
-                .and_then(|v| match v { ParameterValue::Float(i) => Some(*i), _ => None})
+            let middle = preset_config
+                .parameters
+                .get("middle")
+                .and_then(|v| match v {
+                    ParameterValue::Float(i) => Some(*i),
+                    _ => None,
+                })
                 .unwrap_or(12.0);
-            Box::new(crate::presets::stillGradient::StillGradientEffect::new(color_a, color_b, middle))
+            Box::new(crate::presets::stillGradient::StillGradientEffect::new(
+                color_a, color_b, middle,
+            ))
         }
         // "thermalStatus" => {
         //     Box::new(crate::presets::thermalStatus::ThermalStatusEffect::new())
         // }
-
         _ => return Err(format!("Unknown preset: {}", preset_config.name)),
     };
 
@@ -275,11 +468,19 @@ fn set_preset(preset_name: String, parameters: std::collections::HashMap<String,
         *current_effect = Some(new_effect);
     }
 
-    Ok(format!("Preset '{}' loaded successfully", preset_config.name))
+    Ok(format!(
+        "Preset '{}' loaded successfully",
+        preset_config.name
+    ))
 }
 
 #[tauri::command]
-fn adjust_preset_parameter(preset_name: String, param_name: String, value: ParameterValue, state: State<AppState>) -> Result<(), String> {
+fn adjust_preset_parameter(
+    preset_name: String,
+    param_name: String,
+    value: ParameterValue,
+    state: State<AppState>,
+) -> Result<(), String> {
     // Update stored parameters
     {
         let mut params = state.current_preset_params.lock().unwrap();
@@ -326,9 +527,8 @@ fn run_universal_effect_loop(app_handle: tauri::AppHandle) {
                     // if(effect.is_static){
                     //     continue;
                     // }else{
-                        effect.update(&mut controller, time, delta);
+                    effect.update(&mut controller, time, delta);
                     //}
-                    
                 }
             }
 
@@ -352,11 +552,10 @@ fn run_universal_effect_loop(app_handle: tauri::AppHandle) {
     });
 }
 
-
 fn main() {
     let ui_frame = Arc::new(Mutex::new(vec![Color::black(); NUM_ZONES]));
     let controller = LedController::new(ui_frame.clone());
-    
+
     let app_state = AppState {
         controller: Mutex::new(controller),
         ui_frame: ui_frame.clone(),
@@ -371,21 +570,54 @@ fn main() {
         .manage(app_state)
         // CRITICAL FIX: Only one invoke_handler call with all commands
         .invoke_handler(tauri::generate_handler![
+            set_lighting_priority,
+            check_startup_installed,
+            install_startup_task,
+            uninstall_startup_task,
+            get_settings,
+            save_settings,
             get_frame,
-            test_set_red,
+            //test_set_red,
             get_preset_metadata,
             set_preset,
             adjust_preset_parameter
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|_app, event| match event {
-            SystemTrayEvent::MenuItemClick { id, .. } => if id == "quit" { std::process::exit(0); },
+            SystemTrayEvent::MenuItemClick { id, .. } => {
+                if id == "quit" {
+                    std::process::exit(0);
+                }
+            }
             _ => {}
         })
         .setup(|app| {
+            let settings = settings::load_settings().unwrap_or_default();
+
+            if settings.auto_fix_on_startup {
+                if !installer::is_startup_task_installed() {
+                    println!(
+                        "Installing startup task with delay of {} seconds",
+                        settings.startup_delay_seconds
+                    );
+                    if let Err(e) = installer::create_startup_task(settings.startup_delay_seconds) {
+                        eprintln!("Failed to install startup task: {}", e);
+                    } else {
+                        println!("Startup task installed successfully");
+                    }
+                }
+                if settings.fix_on_app_launch {
+                    if let Err(e) = lighting::set_windows_lighting_on_top() {
+                        eprintln!("Failed to set Windows Dynamic Lighting on top: {}", e);
+                    } else {
+                        println!("Windows Dynamic Lighting Set to top priority on app launch");
+                    }
+                }
+            }
+
             let handle = app.handle();
             let state = handle.state::<AppState>();
-            
+
             // Try to connect the HID device first
             {
                 let mut controller = state.controller.lock().unwrap();
