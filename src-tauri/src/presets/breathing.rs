@@ -15,7 +15,7 @@ impl ColorBreathEffect {
 impl Effect for ColorBreathEffect {
     fn update(&mut self, controller: &mut LedController, time: f32, _delta: f32) {
         let brightness =
-            ((time * self.speed * std::f32::consts::PI * 2.0).sin() + 1.0) / 2.0;
+            ((time * self.speed * std::f32::consts::PI * 2.0).sin() + 1.0);
 
         let _ = controller.set_all_instant(self.color.scale(brightness));
     }

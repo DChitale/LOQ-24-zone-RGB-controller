@@ -1,112 +1,129 @@
-// use crate::led_driver::{LedController, Color, NUM_ZONES};
-// use crate::effects::Effect;
+use crate::led_driver::{LedController, Color};
+use crate::effects::Effect;
 
-// use sysinfo::Components;
-// use std::time::{Instant, Duration};
+use sysinfo::System;
+use nvml_wrapper::Nvml;
+use nvml_wrapper::enum_wrappers::device::TemperatureSensor;
 
-// pub struct ThermalStatusEffect {
-//     // temperatures
-//     cpu_temp: f32,
-//     gpu_temp: f32,
-//     aux_temp: f32,
+pub struct StrictSystemMonitorEffect {
+    // ---- system ----
+    sys: System,
+    total_memory: u64,
+    cores: usize,
 
-//     // sysinfo
-//     components: Components,
-//     last_poll: Instant,
-// }
+    // ---- nvml ----
+    nvml: Nvml,
 
-// impl ThermalStatusEffect {
-//     pub fn new() -> Self {
-//         let components = Components::new_with_refreshed_list();
+    // ---- cached values ----
+    cpu_usage: f32,
+    mem_usage: f32,
+    gpu_usage: f32,
+}
 
-//         Self {
-//             cpu_temp: 0.0,
-//             gpu_temp: 0.0,
-//             aux_temp: 0.0,
-//             components,
-//             last_poll: Instant::now(),
-//         }
-//     }
+impl StrictSystemMonitorEffect {
+    pub fn new() -> Self {
+        let mut sys = System::new();
+        sys.refresh_all();
 
-//     fn poll_temperatures(&mut self) {
-//         // limit polling rate (sysinfo is not free)
-//         if self.last_poll.elapsed() < Duration::from_millis(500) {
-//             return;
-//         }
+        let total_memory = sys.total_memory();
+        let cores = sys.cpus().len();
 
-//         self.components.refresh();
+        let nvml = Nvml::init()
+            .expect("Failed to initialize NVML. Make sure NVIDIA drivers are installed.");
 
-//         let mut cpu = None;
-//         let mut gpu = None;
-//         let mut aux = None;
+        Self {
+            sys,
+            total_memory,
+            cores,
+            nvml,
+            cpu_usage: 0.0,
+            mem_usage: 0.0,
+            gpu_usage: 0.0,
+        }
+    }
 
-//         for component in &self.components {
-//             let name = component.label().to_lowercase();
-//             let temp = component.temperature();
+    fn read_metrics(&mut self) {
+        // === EXACT SYSTEM LOGIC ===
+        self.sys.refresh_all();
 
-//             if cpu.is_none() && name.contains("cpu") {
-//                 cpu = Some(temp);
-//             } else if gpu.is_none() && name.contains("gpu") {
-//                 gpu = Some(temp);
-//             } else if aux.is_none() {
-//                 aux = Some(temp);
-//             }
-//         }
+        let mut total_usage = 0.0;
+        for cpu in self.sys.cpus() {
+            total_usage += cpu.cpu_usage() as f32;
+        }
+        let usage = total_usage / self.cores as f32;
+        self.cpu_usage = (usage / 100.0).clamp(0.0, 1.0);
 
-//         self.cpu_temp = cpu.unwrap_or(0.0);
-//         self.gpu_temp = gpu.unwrap_or(0.0);
-//         self.aux_temp = aux.unwrap_or(0.0);
+        self.mem_usage =
+            (self.sys.used_memory() as f32 / self.total_memory as f32)
+                .clamp(0.0, 1.0);
 
-//         self.last_poll = Instant::now();
-//     }
+        // === GPU USAGE (NOT TEMP) ===
+        if let Ok(device) = self.nvml.device_by_index(0) {
+            if let Ok(util) = device.utilization_rates() {
+                self.gpu_usage = (util.gpu as f32 / 100.0).clamp(0.0, 1.0);
+            }
+        }
+    }
+}
 
-//     fn temp_to_color(temp: f32) -> Color {
-//         let t = ((temp - 30.0) / 60.0).clamp(0.0, 1.0);
+impl Effect for StrictSystemMonitorEffect {
+    fn start(&mut self) {
+        self.read_metrics();
+    }
 
-//         let hue = if t < 0.5 {
-//             220.0 + (120.0 - 220.0) * (t * 2.0)
-//         } else {
-//             120.0 + (0.0 - 120.0) * ((t - 0.5) * 2.0)
-//         };
+    fn update(
+        &mut self,
+        controller: &mut LedController,
+        _time: f32,
+        _delta: f32,
+    ) {
+        self.read_metrics();
 
-//         Color::from_hsv(hue, 0.85, 0.6)
-//     }
-// }
+        // CPU | MEM | GPU (8 zones each, solid blocks)
+        draw_block(controller, 0,  self.cpu_usage);
+        draw_block(controller, 8,  self.mem_usage);
+        draw_block(controller, 16, self.gpu_usage);
 
-// impl Effect for ThermalStatusEffect {
-//     fn update(&mut self, controller: &mut LedController, _time: f32, _delta: f32) {
-//         // pull temps internally
-//         self.poll_temperatures();
+        let _ = controller.flush_buffered();
+    }
 
-//         let third = NUM_ZONES / 3;
+    fn name(&self) -> &str {
+        "Strict System Monitor"
+    }
+}
 
-//         let cpu_color = Self::temp_to_color(self.cpu_temp);
-//         let gpu_color = Self::temp_to_color(self.gpu_temp);
-//         let aux_color = Self::temp_to_color(self.aux_temp);
+// =======================================================
+// VISUALS
+// =======================================================
 
-//         // LEFT — CPU
-//         for i in 0..third {
-//             controller.set_zone(i, cpu_color);
-//         }
+fn draw_block(
+    controller: &mut LedController,
+    start: usize,
+    value: f32,
+) {
+    let color = value_to_color(value);
 
-//         // MIDDLE — AUX glow
-//         for i in third..(2 * third) {
-//             let dist =
-//                 ((i - third) as f32 / third as f32 - 0.5).abs() * 2.0;
-//             let brightness = (1.0 - dist).clamp(0.2, 1.0);
+    for i in 0..8 {
+        controller.set_zone(start + i, color);
+    }
+}
 
-//             controller.set_zone(i, aux_color.scale(brightness));
-//         }
+fn value_to_color(v: f32) -> Color {
+    let v = v.clamp(0.0, 1.0);
 
-//         // RIGHT — GPU
-//         for i in (2 * third)..NUM_ZONES {
-//             controller.set_zone(i, gpu_color);
-//         }
+    let blue   = Color::from_hsv(220.0, 1.0, 1.0);
+    let green  = Color::from_hsv(120.0, 1.0, 1.0);
+    let yellow = Color::from_hsv(60.0,  1.0, 1.0);
+    let red    = Color::from_hsv(0.0,   1.0, 1.0);
 
-//         let _ = controller.flush_buffered();
-//     }
+    if v < 0.33 {
+        blue.lerp(&green, v / 0.33)
+    } else if v < 0.66 {
+        green.lerp(&yellow, (v - 0.33) / 0.33)
+    } else {
+        yellow.lerp(&red, (v - 0.66) / 0.34)
+    }
+}
 
-//     fn name(&self) -> &str {
-//         "Thermal Status"
-//     }
-// }
+// Public alias expected by the rest of the codebase
+pub type ThermalStatusEffect = StrictSystemMonitorEffect;

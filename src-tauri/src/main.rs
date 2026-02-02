@@ -38,6 +38,7 @@ use crate::presets::{
     stillGradient::StillGradientEffect,
     sweep::RgbSweepEffect,
     wheel::ColorWheelEffect,
+    thermalStatus::ThermalStatusEffect,
     ParameterValue,
     //thermalStatus::ThermalStatusEffect,
     PresetConfig,
@@ -192,9 +193,10 @@ fn set_preset(
         }
     }
 
-    // Create new effect based on preset name
-    let new_effect: Box<dyn Effect> = match preset_config.name.as_str() {
-        "staticColor" => {
+    // Create new effect based on preset name (case-insensitive match)
+    let preset_name_lc = preset_config.name.to_lowercase();
+    let new_effect: Box<dyn Effect> = match preset_name_lc.as_str() {
+        "staticcolor" => {
             let color = preset_config
                 .parameters
                 .get("color")
@@ -206,7 +208,7 @@ fn set_preset(
             Box::new(crate::presets::staticColor::StaticEffect::new(color))
         }
         "off" => Box::new(OffEffect::new()),
-        "rainbowCycle" => {
+        "rainbowcycle" => {
             let speed = preset_config
                 .parameters
                 .get("speed")
@@ -217,7 +219,7 @@ fn set_preset(
                 .unwrap_or(1.0);
             Box::new(RainbowCycleEffect::new(speed))
         }
-        "rainbowWave" => {
+        "rainbowwave" => {
             let speed = preset_config
                 .parameters
                 .get("speed")
@@ -229,7 +231,7 @@ fn set_preset(
             Box::new(RainbowWaveEffect::new(speed))
         }
         "sweep" => Box::new(RgbSweepEffect::new()),
-        "rainbowBreath" => {
+        "rainbowbreath" => {
             let speed = preset_config
                 .parameters
                 .get("speed")
@@ -239,6 +241,9 @@ fn set_preset(
                 })
                 .unwrap_or(1.0);
             Box::new(RainbowBreathEffect::new(speed))
+        }
+        "thermalstatus" => {
+            Box::new(ThermalStatusEffect::new())
         }
         "breathing" => {
             let speed = preset_config
@@ -296,7 +301,7 @@ fn set_preset(
 
             Box::new(HorseEffect::new(speed, length, base_color, horse_color))
         }
-        "horseCycle" => {
+        "horsecycle" => {
             let speed = preset_config
                 .parameters
                 .get("speed")
@@ -317,16 +322,7 @@ fn set_preset(
             Box::new(SmoothHorseCycleEffect::new(speed, length))
         }
         "rpm" => {
-            let speed = preset_config
-                .parameters
-                .get("speed")
-                .and_then(|v| match v {
-                    ParameterValue::Float(f) => Some(*f),
-                    _ => None,
-                })
-                .unwrap_or(3.0);
-
-            Box::new(FerrariRpmEffect::new(speed))
+            Box::new(FerrariRpmEffect::new())
         }
         "pulse" => {
             let speed = preset_config

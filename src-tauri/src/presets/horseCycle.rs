@@ -5,7 +5,7 @@ pub struct SmoothHorseCycleEffect {
     position: f32,
     speed: f32,
     length: f32,
-    base_hue: f32,
+    direction: f32,
     horse_hue: f32,
 }
 
@@ -15,36 +15,43 @@ impl SmoothHorseCycleEffect {
             position: 0.0,
             speed,
             length,
-            base_hue: 0.0,
-            horse_hue: 180.0,
+            direction: 1.0,
+            horse_hue: 30.0, // start warm, arbitrary
         }
     }
 }
 
 impl Effect for SmoothHorseCycleEffect {
     fn update(&mut self, controller: &mut LedController, _time: f32, delta: f32) {
-        // Smooth position advance
-        self.position = (self.position + delta * self.speed) % NUM_ZONES as f32;
+        // Move
+        self.position += self.direction * delta * self.speed;
 
-        // Smooth hue cycling
-        self.base_hue = (self.base_hue + delta * 8.0) % 360.0;
-        self.horse_hue = (self.horse_hue + delta * 50.0) % 360.0;
+        // Bounce at edges
+        let max_pos = NUM_ZONES as f32 - 1.0;
+        let mut bounced = false;
 
-        let base_color = Color::from_hsv(self.base_hue, 0.25, 0.50);
+        if self.position <= 0.0 {
+            self.position = 0.0;
+            self.direction = 1.0;
+            bounced = true;
+        } else if self.position >= max_pos {
+            self.position = max_pos;
+            self.direction = -1.0;
+            bounced = true;
+        }
+
+        // Change color ONLY on bounce
+        if bounced {
+            self.horse_hue = (self.horse_hue + 60.0) % 360.0;
+        }
+
+        let base_hue = (self.horse_hue + 180.0) % 360.0;
+
+        let base_color = Color::from_hsv(base_hue, 0.25, 0.45);
         let horse_color = Color::from_hsv(self.horse_hue, 1.0, 1.0);
 
         for i in 0..NUM_ZONES {
-            let zone_pos = i as f32;
-
-            // Circular distance
-            let dist = ((zone_pos - self.position + NUM_ZONES as f32)
-                % NUM_ZONES as f32)
-                .min(
-                    (self.position - zone_pos + NUM_ZONES as f32)
-                        % NUM_ZONES as f32,
-                );
-
-            // Soft falloff
+            let dist = (i as f32 - self.position).abs();
             let intensity = (1.0 - dist / self.length).clamp(0.0, 1.0);
 
             let color = base_color.lerp(&horse_color, intensity);

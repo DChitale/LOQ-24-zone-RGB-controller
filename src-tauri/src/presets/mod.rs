@@ -61,6 +61,12 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
             ],
         },
         PresetMetadata {
+            name: "thermalStatus".to_string(),
+            display_name: "CPU-Mem-GPU usage status".to_string(),
+            description: "Left => CPU, Middle => Memory, Right => GPU".to_string(),
+            parameters: vec![],
+        },
+        PresetMetadata {
             name: "off".to_string(),
             display_name: "Off".to_string(),
             description: "Turn off all lighting".to_string(),
@@ -188,26 +194,7 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
             name: "rpm".to_string(),
             display_name: "Ferrari RPM".to_string(),
             description: "Ferrari-like = fast, aggressive, red-dominant, precision motion — not rainbow fluff.".to_string(),
-            parameters: vec![
-                // ParameterConfig {
-                //     name: "phase".to_string(),
-                //     label: "Phase".to_string(),
-                //     param_type: ParameterType::Float,
-                //     min: 0.1,
-                //     max: 10.0,
-                //     default: 2.0,
-                //     step: 0.1,
-                // },
-                ParameterConfig {
-                    name: "speed".to_string(),
-                    label: "Speed".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.1,
-                    max: 10.0,
-                    default: 1.0,
-                    step: 0.1,
-                },
-            ],
+            parameters: vec![],
         },
         PresetMetadata {
             name: "rainbowBreath".to_string(),
@@ -444,34 +431,27 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
             name: "egdeGlow".to_string(),
             display_name: "Liquid Edge Glow".to_string(),
             description: "Looks like light leaking from under glass, Center is calm, edges gently alive".to_string(),
-            parameters: vec![
-                ParameterConfig {
-                    name: "none".to_string(),
-                    label: "No adjustments available".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.0,
-                    max: 0.0,
-                    default: 0.0,
-                    step: 0.0,
-                },
-            ],
+            parameters: vec![],
         },
-        PresetMetadata {
-            name: "thermalStatus".to_string(),
-            display_name: "Thermal Situation".to_string(),
-            description: "Left => CPU, Right => GPU".to_string(),
-            parameters: vec![
-                ParameterConfig {
-                    name: "none".to_string(),
-                    label: "No adjustments available".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.0,
-                    max: 0.0,
-                    default: 0.0,
-                    step: 0.0,
-                },
-            ],
-        },
+        // PresetMetadata {
+        //     name: "thermalStatus".to_string(),
+        //     display_name: "Thermal Situation".to_string(),
+        //     description: "Left => CPU, Right => GPU".to_string(),
+        //     parameters: vec![
+        //         ParameterConfig {
+        //             name: "none".to_string(),
+        //             label: "No adjustments available".to_string(),
+        //             param_type: ParameterType::Float,
+        //             min: 0.0,
+        //             max: 0.0,
+        //             default: 0.0,
+        //             step: 0.0,
+        //         },
+        //     ],
+
+
+        
+        // },
         PresetMetadata {
             name: "stillGradient".to_string(),
             display_name: "Still Gradient".to_string(),
@@ -548,4 +528,5 @@ pub mod sweep;
 pub mod horse;
 pub mod horseCycle;
 pub mod rpm;
+pub mod thermalStatus;
 //pub mod thermalStatus;

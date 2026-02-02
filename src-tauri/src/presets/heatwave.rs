@@ -13,24 +13,41 @@ impl HeatWaveEffect {
 
 impl Effect for HeatWaveEffect {
     fn update(&mut self, controller: &mut LedController, time: f32, _delta: f32) {
+        let t = time * self.speed * 0.15;
+
         for i in 0..NUM_ZONES {
             let pos = i as f32 / NUM_ZONES as f32;
-            let w = wave(pos, time * self.speed, 2.0);
-            let intensity = ((w + 1.0) / 2.0).clamp(0.0, 1.0);
 
-            let color = Color::from_hsv(
-                20.0 + intensity * 40.0, // red → yellow
-                1.0,
-                intensity,
+            // Always-on heat base (fills the keyboard)
+            let base = 0.6;
+
+            // Very slow spatial drift (large-scale motion)
+            let drift = ((pos * 2.0 + t).fract() - 0.5).abs();
+            let drift = 1.0 - drift * 2.0;
+
+            // Gentle variation, NOT flicker
+            let variation = drift * 0.25;
+
+            let mut intensity = (base + variation).clamp(0.0, 1.0);
+
+            // Soft curve to avoid harsh edges
+            intensity = intensity.powf(1.3);
+
+            // Heat color: deep orange → warm yellow
+            let hue = 18.0 + intensity * 22.0;
+            let saturation = 1.0;
+            let value = intensity;
+
+            controller.set_zone(
+                i,
+                Color::from_hsv(hue, saturation, value),
             );
-
-            controller.set_zone(i, color);
         }
 
         let _ = controller.flush_buffered();
     }
 
     fn name(&self) -> &str {
-        "Heat Wave"
+        "Heat Bed"
     }
 }
