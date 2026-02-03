@@ -73,6 +73,31 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
             parameters: vec![],
         },
         PresetMetadata {
+            name: "ambient".to_string(),
+            display_name: "Screen Ambiance light effect.".to_string(),
+            description: "Mimics ambient light based on screen content.".to_string(),
+            parameters: vec![
+                ParameterConfig
+                {name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 5.0,
+                    default: 1.0,
+                    step: 0.1,},
+                ParameterConfig {
+                    name: "smoothing".to_string(),
+                    label: "Smoothing".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.0,
+                    max: 10.0,
+                    default: 5.0,
+                    step: 0.1,
+                }
+                
+            ],
+        },
+        PresetMetadata {
             name: "breathing".to_string(),
             display_name: "Color Breath".to_string(),
             description: "Fade in → fade out.".to_string(),
@@ -529,4 +554,5 @@ pub mod horse;
 pub mod horseCycle;
 pub mod rpm;
 pub mod thermalStatus;
+pub mod ambient;
 //pub mod thermalStatus;

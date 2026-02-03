@@ -21,6 +21,16 @@ winreg = "0.52"
 sysinfo = "0.38.0"
 nvml-wrapper = "0.11.0"
 tokio = { version = "1", features = ["full"] }
+windows = { version = "0.52", features = [
+    "Win32_Graphics_Direct3D",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_Graphics_Gdi",
+    "Win32_System_Threading",
+    "Win32_Foundation"
+] }
+anyhow = "1.0"
 
 [lib]
 name = "led_driver"

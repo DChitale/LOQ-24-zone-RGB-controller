@@ -39,6 +39,7 @@ use crate::presets::{
     sweep::RgbSweepEffect,
     wheel::ColorWheelEffect,
     thermalStatus::ThermalStatusEffect,
+    ambient::AmbientEffect,
     ParameterValue,
     //thermalStatus::ThermalStatusEffect,
     PresetConfig,
@@ -192,7 +193,6 @@ fn set_preset(
             params.insert(key.clone(), value.clone());
         }
     }
-
     // Create new effect based on preset name (case-insensitive match)
     let preset_name_lc = preset_config.name.to_lowercase();
     let new_effect: Box<dyn Effect> = match preset_name_lc.as_str() {
@@ -230,6 +230,24 @@ fn set_preset(
                 .unwrap_or(1.0);
             Box::new(RainbowWaveEffect::new(speed))
         }
+        "ambient" => {
+            #[cfg(not(target_os = "windows"))]
+            return Err("Ambient effect is only supported on Windows".to_string());
+            #[cfg(target_os = "windows")]
+            {
+                let smoothing: f32 = preset_config
+                    .parameters
+                    .get("smoothing")
+                    .and_then(|v| match v {
+                        ParameterValue::Float(f) => Some(*f),
+                        _ => None,
+                    })
+                    .unwrap_or(1.0);
+                let sampler = crate::presets::ambient::DxgiScreenSampler::new()
+                    .map_err(|e| e.to_string())?;
+                Box::new(AmbientEffect::new(sampler, smoothing))
+            }
+        },
         "sweep" => Box::new(RgbSweepEffect::new()),
         "rainbowbreath" => {
             let speed = preset_config
