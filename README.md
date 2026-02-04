@@ -291,3 +291,4 @@ Pending Features
 - Support for different `PID` and `VID` under hardware.
 - Implementation of custom Effects Engine using JSON.
 - There are still some bugs left to iron out.
+- Spuuort for Linux.
