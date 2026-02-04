@@ -93,8 +93,35 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
                     max: 10.0,
                     default: 5.0,
                     step: 0.1,
-                }
-                
+                },
+                // Sampling region controls (fractions where 0.0 = top/left, 1.0 = bottom/right)
+                ParameterConfig {
+                    name: "sample_top".to_string(),
+                    label: "Screen sample top".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.0,
+                    max: 1.0,
+                    default: 0.85,
+                    step: 0.01,
+                },
+                ParameterConfig {
+                    name: "sample_left".to_string(),
+                    label: "Screen sample left".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.0,
+                    max: 1.0,
+                    default: 0.0,
+                    step: 0.01,
+                },
+                ParameterConfig {
+                    name: "sample_width".to_string(),
+                    label: "Screen sample width".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.01,
+                    max: 1.0,
+                    default: 1.0,
+                    step: 0.01,
+                },
             ],
         },
         PresetMetadata {
@@ -372,21 +399,11 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
                 },
             ],
         },
-        PresetMetadata {
-            name: "energyPulse".to_string(),
-            display_name: "Energy Pulse".to_string(),
-            description: "Feels fast and punchy without being noisy.".to_string(),
-            parameters: vec![
-                ParameterConfig {
-                    name: "speed".to_string(),
-                    label: "Speed".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.1,
-                    max: 10.0,
-                    default: 1.0,
-                    step: 0.01,
-                },
-            ],
+        PresetMetadata{
+            name: "horizon".to_string(),
+            display_name: "Horizon".to_string(),
+            description: "Looks like a black hole".to_string(),
+            parameters: vec![],
         },
         PresetMetadata {
             name: "nebula".to_string(),
@@ -404,22 +421,7 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
                 },
             ],
         },
-        PresetMetadata {
-            name: "fireFlow".to_string(),
-            display_name: "Fire Flow".to_string(),
-            description: "Looks alive. Surprisingly cheap to compute.".to_string(),
-            parameters: vec![
-                ParameterConfig {
-                    name: "speed".to_string(),
-                    label: "Speed".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.1,
-                    max: 10.0,
-                    default: 1.0,
-                    step: 0.01,
-                },
-            ],
-        },
+        
         PresetMetadata {
             name: "chromaticBreath".to_string(),
             display_name: "Chromatic Breath".to_string(),
@@ -452,31 +454,7 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
                 },
             ],
         },
-        PresetMetadata {
-            name: "egdeGlow".to_string(),
-            display_name: "Liquid Edge Glow".to_string(),
-            description: "Looks like light leaking from under glass, Center is calm, edges gently alive".to_string(),
-            parameters: vec![],
-        },
-        // PresetMetadata {
-        //     name: "thermalStatus".to_string(),
-        //     display_name: "Thermal Situation".to_string(),
-        //     description: "Left => CPU, Right => GPU".to_string(),
-        //     parameters: vec![
-        //         ParameterConfig {
-        //             name: "none".to_string(),
-        //             label: "No adjustments available".to_string(),
-        //             param_type: ParameterType::Float,
-        //             min: 0.0,
-        //             max: 0.0,
-        //             default: 0.0,
-        //             step: 0.0,
-        //         },
-        //     ],
-
-
-        
-        // },
+       
         PresetMetadata {
             name: "stillGradient".to_string(),
             display_name: "Still Gradient".to_string(),
@@ -555,4 +533,5 @@ pub mod horseCycle;
 pub mod rpm;
 pub mod thermalStatus;
 pub mod ambient;
+pub mod horizon;
 //pub mod thermalStatus;

@@ -12,7 +12,8 @@ pub struct StrictSystemMonitorEffect {
     cores: usize,
 
     // ---- nvml ----
-    nvml: Nvml,
+    // NVML may be unavailable or inaccessible (NoPermission). store as Option and fall back.
+    nvml: Option<Nvml>,
 
     // ---- cached values ----
     cpu_usage: f32,
@@ -28,8 +29,13 @@ impl StrictSystemMonitorEffect {
         let total_memory = sys.total_memory();
         let cores = sys.cpus().len();
 
-        let nvml = Nvml::init()
-            .expect("Failed to initialize NVML. Make sure NVIDIA drivers are installed.");
+        let nvml = match Nvml::init() {
+            Ok(n) => Some(n),
+            Err(e) => {
+                eprintln!("NVML init failed (GPU metrics disabled): {}", e);
+                None
+            }
+        };
 
         Self {
             sys,
@@ -58,10 +64,19 @@ impl StrictSystemMonitorEffect {
                 .clamp(0.0, 1.0);
 
         // === GPU USAGE (NOT TEMP) ===
-        if let Ok(device) = self.nvml.device_by_index(0) {
-            if let Ok(util) = device.utilization_rates() {
-                self.gpu_usage = (util.gpu as f32 / 100.0).clamp(0.0, 1.0);
+        if let Some(nvml) = &self.nvml {
+            if let Ok(device) = nvml.device_by_index(0) {
+                if let Ok(util) = device.utilization_rates() {
+                    self.gpu_usage = (util.gpu as f32 / 100.0).clamp(0.0, 1.0);
+                } else {
+                    self.gpu_usage = 0.0;
+                }
+            } else {
+                self.gpu_usage = 0.0;
             }
+        } else {
+            // NVML unavailable (permission/driver). keep GPU usage at 0.
+            self.gpu_usage = 0.0;
         }
     }
 }

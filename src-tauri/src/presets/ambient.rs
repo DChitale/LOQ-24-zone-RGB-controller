@@ -109,11 +109,11 @@ impl RgbF {
         };
 
         // Suppress blue when it's the dominant channel
-        let (r, g, b) = if b >= r && b >= g && b > 0.12 {
-            (r, g, b * BLUE_SUPPRESS)
-        } else {
-            (r, g, b)
-        };
+        // let (r, g, b) = if b >= r && b >= g && b > 0.12 {
+        //     (r, g, b * BLUE_SUPPRESS)
+        // } else {
+        //     (r, g, b)
+        // };
 
         Self {
             r: r.clamp(0.0, 1.0),
@@ -157,6 +157,10 @@ mod dxgi {
         staging: ID3D11Texture2D,
         width: u32,
         height: u32,
+        // sampling region expressed as fractions [0.0..1.0]
+        sample_top_frac: f32,    // fraction from top where sampling region starts (was 0.85)
+        sample_left_frac: f32,   // fraction from left where horizontal region starts
+        sample_width_frac: f32,  // fraction of total width to sample
     }
 
     impl DxgiScreenSampler {
@@ -216,8 +220,25 @@ mod dxgi {
                     staging,
                     width,
                     height,
+                    sample_top_frac: 0.85,
+                    sample_left_frac: 0.0,
+                    sample_width_frac: 1.0,
                 })
             }
+        }
+
+        /// Set the vertical start as a fraction [0.0..1.0] from the top of the screen
+        pub fn set_sample_top_fraction(&mut self, f: f32) {
+            self.sample_top_frac = f.clamp(0.0, 1.0);
+        }
+
+        /// Set the horizontal sampling region using left offset and width (fractions)
+        pub fn set_sample_horizontal_region(&mut self, left_frac: f32, width_frac: f32) {
+            let left = left_frac.clamp(0.0, 1.0);
+            let width = width_frac.clamp(0.0, 1.0);
+            self.sample_left_frac = left;
+            // ensure region stays within bounds
+            self.sample_width_frac = if left + width > 1.0 { 1.0 - left } else { width };
         }
     }
 
@@ -238,11 +259,17 @@ mod dxgi {
                 if self.context.Map(&self.staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped)).is_ok() {
                     let data = mapped.pData as *const u8;
                     let pitch = mapped.RowPitch as usize;
-                    let y_start = (self.height as f32 * 0.85) as usize;
+
+                    // compute sampling region in pixels using configured fractions
+                    let y_start = (self.height as f32 * self.sample_top_frac) as usize;
+                    let region_left = (self.width as f32 * self.sample_left_frac) as usize;
+                    let region_width = ((self.width as f32) * self.sample_width_frac).max(1.0) as usize;
 
                     for x in 0..AMBIENT_WIDTH {
                         for y in 0..AMBIENT_HEIGHT {
-                            let sx = x * self.width as usize / AMBIENT_WIDTH;
+                            // map zone index to region pixel (clamped)
+                            let sx_rel = x * region_width / AMBIENT_WIDTH;
+                            let sx = (region_left + sx_rel).min(self.width as usize - 1);
                             let sy = y_start + y * (self.height as usize - y_start) / AMBIENT_HEIGHT;
                             let p = data.add(sy * pitch + sx * 4);
 
@@ -320,7 +347,7 @@ impl<S: ScreenSampler> crate::effects::Effect for AmbientEffect<S> {
             } else {
                 avg
                 // Uncomment the line below to supress whites and blues if too strong
-                    //.suppress_whites_and_blues()
+                    .suppress_whites_and_blues()
                     .saturate(SATURATION_BOOST)
                     .apply_gamma(GAMMA)
             };

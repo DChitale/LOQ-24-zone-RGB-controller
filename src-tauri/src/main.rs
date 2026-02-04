@@ -40,6 +40,7 @@ use crate::presets::{
     wheel::ColorWheelEffect,
     thermalStatus::ThermalStatusEffect,
     ambient::AmbientEffect,
+    horizon::EventHorizon,
     ParameterValue,
     //thermalStatus::ThermalStatusEffect,
     PresetConfig,
@@ -243,8 +244,37 @@ fn set_preset(
                         _ => None,
                     })
                     .unwrap_or(1.0);
-                let sampler = crate::presets::ambient::DxgiScreenSampler::new()
+
+                // create sampler and apply parameters (preset overrides global settings)
+                let mut sampler = crate::presets::ambient::DxgiScreenSampler::new()
                     .map_err(|e| e.to_string())?;
+
+                // apply preset parameters if provided
+                let preset_top = preset_config
+                    .parameters
+                    .get("sample_top")
+                    .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None });
+                let preset_left = preset_config
+                    .parameters
+                    .get("sample_left")
+                    .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None });
+                let preset_width = preset_config
+                    .parameters
+                    .get("sample_width")
+                    .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None });
+
+                if let (Some(t), Some(l), Some(w)) = (preset_top, preset_left, preset_width) {
+                    sampler.set_sample_top_fraction(t);
+                    sampler.set_sample_horizontal_region(l, w);
+                } else if let Ok(s) = crate::settings::load_settings() {
+                    // fallback to global settings
+                    sampler.set_sample_top_fraction(s.ambient_sample_top_fraction);
+                    sampler.set_sample_horizontal_region(
+                        s.ambient_sample_left_fraction,
+                        s.ambient_sample_width_fraction,
+                    );
+                }
+
                 Box::new(AmbientEffect::new(sampler, smoothing))
             }
         },
@@ -427,17 +457,7 @@ fn set_preset(
                 .unwrap_or(1.0);
             Box::new(crate::presets::ocean::OceanWaveEffect::new(speed))
         }
-        "energyPulse" => {
-            let speed = preset_config
-                .parameters
-                .get("speed")
-                .and_then(|v| match v {
-                    ParameterValue::Float(f) => Some(*f),
-                    _ => None,
-                })
-                .unwrap_or(1.0);
-            Box::new(crate::presets::energyPulse::EnergyPulseEffect::new(speed))
-        }
+        
         "nebula" => {
             let speed = preset_config
                 .parameters
@@ -449,7 +469,7 @@ fn set_preset(
                 .unwrap_or(1.0);
             Box::new(crate::presets::nebula::NebulaEffect::new(speed))
         }
-        "chromaticBreath" => {
+        "chromaticbreath" => {
             let speed = preset_config
                 .parameters
                 .get("speed")
@@ -462,17 +482,7 @@ fn set_preset(
                 speed,
             ))
         }
-        "fireFlow" => {
-            let speed = preset_config
-                .parameters
-                .get("speed")
-                .and_then(|v| match v {
-                    ParameterValue::Float(f) => Some(*f),
-                    _ => None,
-                })
-                .unwrap_or(1.0);
-            Box::new(crate::presets::fireFlow::FireFlowEffect::new(speed))
-        }
+        
         "silk" => {
             let speed = preset_config
                 .parameters
@@ -484,8 +494,11 @@ fn set_preset(
                 .unwrap_or(1.0);
             Box::new(crate::presets::silk::SilkAmbientEffect::new(speed))
         }
-        "edgeGlow" => Box::new(crate::presets::edgeGlow::LiquidEdgeEffect::new()),
-        "stillGradient" => {
+        "horizon" => {
+            Box::new(EventHorizon::new())
+        }
+        
+        "stillgradient" => {
             let color_a = preset_config
                 .parameters
                 .get("color_a")
@@ -514,9 +527,7 @@ fn set_preset(
                 color_a, color_b, middle,
             ))
         }
-        // "thermalStatus" => {
-        //     Box::new(crate::presets::thermalStatus::ThermalStatusEffect::new())
-        // }
+        
         _ => return Err(format!("Unknown preset: {}", preset_config.name)),
     };
 
@@ -622,7 +633,12 @@ fn main() {
         current_preset_params: Mutex::new(HashMap::new()),
     };
 
-    let tray_menu = SystemTrayMenu::new().add_item(CustomMenuItem::new("quit", "Exit"));
+    let show_item = CustomMenuItem::new("show", "Show");
+    let quit_item = CustomMenuItem::new("quit", "Exit");
+    let tray_menu = SystemTrayMenu::new()
+        .add_item(show_item)
+        .add_native_item(tauri::SystemTrayMenuItem::Separator)
+        .add_item(quit_item);
 
     tauri::Builder::default()
         .manage(app_state)
@@ -642,11 +658,32 @@ fn main() {
             adjust_preset_parameter
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
-        .on_system_tray_event(|_app, event| match event {
-            SystemTrayEvent::MenuItemClick { id, .. } => {
-                if id == "quit" {
+        .on_system_tray_event(|app, event| match event {
+            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+                "show" => {
+                    if let Some(w) = app.get_window("main") {
+                        let _ = w.show();
+                        let _ = w.set_focus();
+                    }
+                }
+                "quit" => {
                     std::process::exit(0);
                 }
+                _ => {}
+            },
+            SystemTrayEvent::DoubleClick { .. } | SystemTrayEvent::LeftClick { .. } => {
+                if let Some(w) = app.get_window("main") {
+                    let _ = w.show();
+                    let _ = w.set_focus();
+                }
+            }
+            _ => {}
+        })
+        .on_window_event(|event| match event.event() {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                // Hide the window instead of allowing the app to exit. Tray + background tasks keep running.
+                let _ = event.window().hide();
+                api.prevent_close();
             }
             _ => {}
         })

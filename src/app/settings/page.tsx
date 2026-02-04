@@ -104,12 +104,7 @@ export default function SettingsPage() {
                         <button className="text-left px-4 py-3 text-[11px] uppercase tracking-widest text-white border-l border-white">
                             Control
                         </button>
-                        <button className="text-left px-4 py-3 text-[11px] uppercase tracking-widest text-zinc-600 hover:text-zinc-300 transition-all">
-                            Automation
-                        </button>
-                        <button className="text-left px-4 py-3 text-[11px] uppercase tracking-widest text-zinc-600 hover:text-zinc-300 transition-all">
-                            Status
-                        </button>
+                       
                     </nav>
                 </div>
 
@@ -293,6 +288,7 @@ export default function SettingsPage() {
                                     }`} />
                                 </button>
                             </div>
+
                         </div>
                     </section>
 

@@ -7,7 +7,7 @@
     "withGlobalTauri": true
   },
   "package": {
-    "productName": "driver",
+    "productName": "Controller",
     "version": "0.1.0"
   },
   "tauri": {
@@ -20,7 +20,7 @@
     },
     "bundle": {
       "active": true,
-      "identifier": "com.tauri.dev",
+      "identifier": "com.tauri.RGBController",
       "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.icns", "icons/icon.ico"]
     },
     "security": {
@@ -28,7 +28,7 @@
     },
     "windows": [
       {
-        "title": "driver",
+        "title": "RGB controller",
         "width": 900,
         "height": 600,
         "resizable": true,

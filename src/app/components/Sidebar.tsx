@@ -20,7 +20,7 @@ export default function ClassySidebar() {
       {/* Brand */}
       <div className="h-24 flex items-center justify-center lg:justify-start lg:px-10">
         <Circle size={22} className="text-white fill-white" />
-        <span className="ml-4 hidden lg:block font-medium tracking-[0.2em] text-white text-xs">CORE</span>
+        <span className="ml-4 hidden lg:block font-medium tracking-[0.2em] text-white text-xs">24-Zone Controller</span>
       </div>
 
       {/* Navigation using Href */}
