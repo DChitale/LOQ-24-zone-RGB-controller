@@ -1,11 +1,12 @@
-// src-tauri/src/installer.rs
 use std::process::Command;
 use std::env;
 
-const TASK_NAME: &str = "SetWindowsLightingOnTop";
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 
-/// Creates a scheduled task that runs on login to ensure Windows stays on top
-/// delay_seconds: How long to wait after login before running (to let Lenovo start first)
+const TASK_NAME: &str = "SetWindowsLightingOnTop";
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 pub fn create_startup_task(delay_seconds: u32) -> Result<(), Box<dyn std::error::Error>> {
     let script_content = r#"
 # Set Windows Dynamic Lighting as top controller
@@ -76,8 +77,11 @@ if (Test-Path $devicesPath) {
         .args([
             "-ExecutionPolicy", "Bypass",
             "-NoProfile",
+            "-NonInteractive",
+            "-WindowStyle", "Hidden",
             "-Command", &task_script
         ])
+        .creation_flags(CREATE_NO_WINDOW)
         .output()?;
     
     if !output.status.success() {
@@ -88,12 +92,11 @@ if (Test-Path $devicesPath) {
     Ok(())
 }
 
-/// Removes the scheduled task (for uninstallation)
+
 pub fn remove_startup_task() -> Result<(), Box<dyn std::error::Error>> {
     let script = format!(r#"
         Unregister-ScheduledTask -TaskName "{}" -Confirm:$false -ErrorAction SilentlyContinue
         
-        # Also remove the script file
         $scriptPath = "$env:APPDATA\SetWindowsLightingOnTop.ps1"
         if (Test-Path $scriptPath) {{
             Remove-Item $scriptPath -Force
@@ -105,8 +108,12 @@ pub fn remove_startup_task() -> Result<(), Box<dyn std::error::Error>> {
     let output = Command::new("powershell")
         .args([
             "-ExecutionPolicy", "Bypass",
+            "-NoProfile",
+            "-NonInteractive",
+            "-WindowStyle", "Hidden",
             "-Command", &script
         ])
+        .creation_flags(CREATE_NO_WINDOW)
         .output()?;
     
     if !output.status.success() {
@@ -117,7 +124,6 @@ pub fn remove_startup_task() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Checks if the scheduled task exists
 pub fn is_startup_task_installed() -> bool {
     let script = format!(r#"
         $task = Get-ScheduledTask -TaskName "{}" -ErrorAction SilentlyContinue
@@ -129,8 +135,12 @@ pub fn is_startup_task_installed() -> bool {
     let output = Command::new("powershell")
         .args([
             "-ExecutionPolicy", "Bypass",
+            "-NoProfile",
+            "-NonInteractive",
+            "-WindowStyle", "Hidden",
             "-Command", &script
         ])
+        .creation_flags(CREATE_NO_WINDOW)
         .output();
     
     if let Ok(output) = output {

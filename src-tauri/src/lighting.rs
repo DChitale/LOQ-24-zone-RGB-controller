@@ -1,6 +1,6 @@
-// src-tauri/src/lighting.rs
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use std::process::Command;
-
 /// Sets Windows Dynamic Lighting as the top priority controller
 /// by swapping provider order in registry
 pub fn set_windows_lighting_on_top() -> Result<(), Box<dyn std::error::Error>> {
@@ -44,9 +44,11 @@ pub fn set_windows_lighting_on_top() -> Result<(), Box<dyn std::error::Error>> {
         .args([
             "-ExecutionPolicy", "Bypass",
             "-NoProfile",
+            "-NonInteractive",
             "-WindowStyle", "Hidden",
             "-Command", script
         ])
+        .creation_flags(0x08000000)
         .output()?;
     
     if !output.status.success() {

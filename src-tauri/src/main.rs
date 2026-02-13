@@ -3,7 +3,6 @@
     windows_subsystem = "windows"
 )]
 
-mod effect_runner;
 mod effects;
 mod installer;
 mod led_driver;
@@ -16,15 +15,15 @@ use crate::led_driver::{Color, LedController};
 use crate::presets::{
     aurora::AuroraEffect,
     breathing::ColorBreathEffect,
-    chromaticBreath::ChromaticBreathEffect,
-    edgeGlow::LiquidEdgeEffect,
-    energyPulse::EnergyPulseEffect,
-    fireFlow::FireFlowEffect,
+    // chromaticBreath::ChromaticBreathEffect,
+    // edgeGlow::LiquidEdgeEffect,
+    // energyPulse::EnergyPulseEffect,
+    // fireFlow::FireFlowEffect,
     heatwave::HeatWaveEffect,
     horse::HorseEffect,
     horseCycle::SmoothHorseCycleEffect,
-    nebula::NebulaEffect,
-    ocean::OceanWaveEffect,
+    // nebula::NebulaEffect,
+    // ocean::OceanWaveEffect,
     off::OffEffect,
     pulse::PulseCenterEffect,
     rainbowBreath::RainbowBreathEffect,
@@ -32,10 +31,10 @@ use crate::presets::{
     rainbowWave::RainbowWaveEffect,
     rpm::FerrariRpmEffect,
     scan::ColorScanEffect,
-    silk::SilkAmbientEffect,
+    // silk::SilkAmbientEffect,
     sparkle::SparkleEffect,
-    staticColor::StaticEffect,
-    stillGradient::StillGradientEffect,
+    // staticColor::StaticEffect,
+    // stillGradient::StillGradientEffect,
     sweep::RgbSweepEffect,
     wheel::ColorWheelEffect,
     thermalStatus::ThermalStatusEffect,
@@ -147,19 +146,6 @@ fn set_brightness(brightness: f32, state: State<AppState>) -> Result<String, Str
 #[tauri::command]
 fn get_frame(state: State<AppState>) -> Vec<Color> {
     state.ui_frame.lock().unwrap().clone()
-}
-
-#[tauri::command]
-fn test_set_red(state: State<AppState>) -> Result<(), String> {
-    let mut controller = state.controller.lock().unwrap();
-
-    // Ensure connection before writing
-    if !controller.is_connected() {
-        controller.connect()?;
-    }
-
-    controller.set_range(0, 23, Color::new(125, 125, 125))?;
-    Ok(())
 }
 
 #[tauri::command]

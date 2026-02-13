@@ -1,5 +1,5 @@
 use crate::led_driver::{LedController, Color, NUM_ZONES};
-use crate::effects::{Effect, wave};
+use crate::effects::{Effect};
 
 pub struct HeatWaveEffect {
     speed: f32,

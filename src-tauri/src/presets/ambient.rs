@@ -14,7 +14,7 @@ const SATURATION_BOOST: f32 = 2.8;
 /// Slight brightness curve so midtones pop (1.0 = linear).
 const GAMMA: f32 = 0.78;
 /// How much faster the transition responds (higher = snappier follow).
-const TRANSITION_SPEED_MULT: f32 = 3.0;
+const TRANSITION_SPEED_MULT: f32 = 1.0;
 /// Suppress white/gray: luminance above this and low chroma = scale down (0 = off).
 const WHITE_LUMA_THRESHOLD: f32 = 0.48;
 const WHITE_CHROMA_THRESHOLD: f32 = 0.18;
@@ -128,7 +128,7 @@ impl RgbF {
 //
 
 pub trait ScreenSampler: Send {
-    fn sample(&mut self, out: &mut [[RgbF; AMBIENT_HEIGHT]; AMBIENT_WIDTH]);
+    fn sample(&mut self, out: &mut [[RgbF; AMBIENT_HEIGHT]; AMBIENT_WIDTH]) -> bool;
 }
 
 //
@@ -243,14 +243,18 @@ mod dxgi {
     }
 
     impl ScreenSampler for DxgiScreenSampler {
-        fn sample(&mut self, out: &mut [[RgbF; AMBIENT_HEIGHT]; AMBIENT_WIDTH]) {
+        fn sample(&mut self, out: &mut [[RgbF; AMBIENT_HEIGHT]; AMBIENT_WIDTH]) -> bool {
             unsafe {
                 let mut frame_info = DXGI_OUTDUPL_FRAME_INFO::default();
                 let mut resource = None;
 
+                // Try to acquire frame - return false if no new frame available
                 if self.duplication.AcquireNextFrame(0, &mut frame_info, &mut resource).is_err() {
-                    return;
+                    return false;
                 }
+
+                // Check if there was actually an update
+                let has_update = frame_info.LastPresentTime != 0 || frame_info.AccumulatedFrames > 0;
 
                 let texture: ID3D11Texture2D = resource.unwrap().cast().unwrap();
                 self.context.CopyResource(&self.staging, &texture);
@@ -285,6 +289,9 @@ mod dxgi {
                 }
 
                 let _ = self.duplication.ReleaseFrame();
+                
+                // Return whether this was a real update
+                has_update
             }
         }
     }
@@ -302,6 +309,7 @@ pub struct AmbientEffect<S: ScreenSampler> {
     smoothing: f32,
     last: [RgbF; AMBIENT_WIDTH],
     last_sample_time: f32,
+    last_valid_sample: [[RgbF; AMBIENT_HEIGHT]; AMBIENT_WIDTH],
 }
 
 impl<S: ScreenSampler> AmbientEffect<S> {
@@ -311,6 +319,7 @@ impl<S: ScreenSampler> AmbientEffect<S> {
             smoothing,
             last: [RgbF::black(); AMBIENT_WIDTH],
             last_sample_time: -1.0,
+            last_valid_sample: [[RgbF::black(); AMBIENT_HEIGHT]; AMBIENT_WIDTH],
         }
     }
 }
@@ -319,6 +328,7 @@ impl<S: ScreenSampler> crate::effects::Effect for AmbientEffect<S> {
     fn start(&mut self) {
         self.last = [RgbF::black(); AMBIENT_WIDTH];
         self.last_sample_time = -1.0;
+        self.last_valid_sample = [[RgbF::black(); AMBIENT_HEIGHT]; AMBIENT_WIDTH];
     }
 
     fn update(&mut self, controller: &mut LedController, time: f32, delta: f32) {
@@ -329,7 +339,17 @@ impl<S: ScreenSampler> crate::effects::Effect for AmbientEffect<S> {
         self.last_sample_time = time;
 
         let mut buffer = [[RgbF::black(); AMBIENT_HEIGHT]; AMBIENT_WIDTH];
-        self.sampler.sample(&mut buffer);
+        
+        // Only process if we got a new frame
+        let got_new_frame = self.sampler.sample(&mut buffer);
+        
+        if !got_new_frame {
+            // No new frame - use last valid sample to avoid processing stale/invalid data
+            buffer = self.last_valid_sample;
+        } else {
+            // Store this valid sample for future use
+            self.last_valid_sample = buffer;
+        }
 
         // Faster response: higher effective smoothing. Smoother curve: smoothstep so transition eases in/out.
         let raw_t = 1.0 - (-self.smoothing * delta * TRANSITION_SPEED_MULT).exp();
@@ -343,10 +363,10 @@ impl<S: ScreenSampler> crate::effects::Effect for AmbientEffect<S> {
 
             let avg = sum.scale(1.0 / AMBIENT_HEIGHT as f32);
             let target = if avg.luminance() < LUMINANCE_THRESHOLD {
-                self.last[x]
+                // For very dark scenes, slowly fade to near-black
+                avg.scale(0.15)
             } else {
                 avg
-                // Uncomment the line below to supress whites and blues if too strong
                     .suppress_whites_and_blues()
                     .saturate(SATURATION_BOOST)
                     .apply_gamma(GAMMA)

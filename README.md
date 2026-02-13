@@ -3,7 +3,7 @@
 
 ![Logo](https://skillicons.dev/icons?i=tauri,rust,next)
 
-[![Build Status](https://travis-ci.org/joemccann/dillinger.svg?branch=master)](https://travis-ci.org/joemccann/dillinger)
+
 
 A lightweight, high-performance controller for managing 24 independent RGB zones. Designed for speed, flexibility, and smooth lighting effects.
 ## Features
