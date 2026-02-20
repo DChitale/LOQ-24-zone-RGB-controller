@@ -62,6 +62,23 @@ pub struct AppState {
 }
 
 #[tauri::command]
+fn enable_dynamic_lighting() -> Result<(), String> {
+    lighting::enable_windows_lighting()
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn disable_dynamic_lighting() -> Result<(), String> {
+    lighting::disable_windows_lighting()
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn is_dynamic_lighting_enabled() -> bool {
+    lighting::is_windows_lighting_enabled()
+}
+
+#[tauri::command]
 fn set_lighting_priority() -> Result<String, String> {
     lighting::set_windows_lighting_on_top()
         .map(|_| "Windows Dynamic Lighting Controller set to top priority.".to_string())
@@ -630,6 +647,9 @@ fn main() {
         .manage(app_state)
         // CRITICAL FIX: Only one invoke_handler call with all commands
         .invoke_handler(tauri::generate_handler![
+            enable_dynamic_lighting,
+            disable_dynamic_lighting,
+            is_dynamic_lighting_enabled,
             set_lighting_priority,
             check_startup_installed,
             install_startup_task,
