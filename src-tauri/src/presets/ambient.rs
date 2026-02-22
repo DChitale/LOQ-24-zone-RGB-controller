@@ -36,15 +36,15 @@ pub struct RgbF {
 }
 
 impl RgbF {
-    fn black() -> Self {
+    pub fn black() -> Self {
         Self { r: 0.0, g: 0.0, b: 0.0 }
     }
 
-    fn add(self, o: Self) -> Self {
+    pub fn add(self, o: Self) -> Self {
         Self { r: self.r + o.r, g: self.g + o.g, b: self.b + o.b }
     }
 
-    fn scale(self, s: f32) -> Self {
+    pub fn scale(self, s: f32) -> Self {
         Self { r: self.r * s, g: self.g * s, b: self.b * s }
     }
 
@@ -60,7 +60,7 @@ impl RgbF {
         0.2126 * self.r + 0.7152 * self.g + 0.0722 * self.b
     }
 
-    fn to_color(self) -> Color {
+    pub fn to_color(self) -> Color {
         Color::new(
             (self.r.clamp(0.0, 1.0) * 255.0) as u8,
             (self.g.clamp(0.0, 1.0) * 255.0) as u8,

@@ -3,6 +3,7 @@
     windows_subsystem = "windows"
 )]
 
+mod audio_sampler;
 mod effects;
 mod installer;
 mod led_driver;
@@ -40,8 +41,10 @@ use crate::presets::{
     thermalStatus::ThermalStatusEffect,
     ambient::AmbientEffect,
     horizon::EventHorizon,
+    audio_sparkle::AudioSparkleEffect,
+    audio_sparkle_rainbow::AudioSparkleRainbowEffect,
+    audio_sparkle_media::AudioSparkleMediaEffect,
     ParameterValue,
-    //thermalStatus::ThermalStatusEffect,
     PresetConfig,
 };
 use std::collections::HashMap;
@@ -448,6 +451,94 @@ fn set_preset(
                 })
                 .unwrap_or(0.1);
             Box::new(SparkleEffect::new(density))
+        }
+        "audio_sparkle" => {
+            let sensitivity: f32 = preset_config
+                .parameters
+                .get("sensitivity")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(1.0);
+            
+            let base_density: f32 = preset_config
+                .parameters
+                .get("base_density")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(0.05);
+
+            let sampler = crate::audio_sampler::AudioSampler::new()
+                .map_err(|e| e.to_string())?;
+
+            Box::new(AudioSparkleEffect::new(sampler, sensitivity, base_density))
+        }
+        "audio_sparkle_rainbow" => {
+            let sensitivity: f32 = preset_config
+                .parameters
+                .get("sensitivity")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(1.0);
+            
+            let base_density: f32 = preset_config
+                .parameters
+                .get("base_density")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(0.0);
+
+            let rainbow_speed: f32 = preset_config
+                .parameters
+                .get("rainbow_speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(1.0);
+
+            let sampler = crate::audio_sampler::AudioSampler::new()
+                .map_err(|e| e.to_string())?;
+
+            Box::new(AudioSparkleRainbowEffect::new(sampler, sensitivity, base_density, rainbow_speed))
+        }
+        "audio_sparkle_media" => {
+            let sensitivity: f32 = preset_config
+                .parameters
+                .get("sensitivity")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(1.0);
+            
+            let base_density: f32 = preset_config
+                .parameters
+                .get("base_density")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(0.0);
+
+            let sampler_audio = crate::audio_sampler::AudioSampler::new()
+                .map_err(|e| e.to_string())?;
+            
+            let mut sampler_media = crate::presets::ambient::DxgiScreenSampler::new()
+                .map_err(|e| e.to_string())?;
+            
+            // For sparkles, sample a broader middle region of the screen for better "media" context
+            sampler_media.set_sample_top_fraction(0.15); // Start from top 15%
+            sampler_media.set_sample_horizontal_region(0.0, 1.0); // Full width
+
+            Box::new(AudioSparkleMediaEffect::new(sampler_audio, sampler_media, sensitivity, base_density))
         }
         "ocean" => {
             let speed = preset_config

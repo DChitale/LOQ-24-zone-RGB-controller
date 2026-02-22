@@ -384,6 +384,90 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
             ],
         },
         PresetMetadata {
+            name: "audio_sparkle".to_string(),
+            display_name: "Audio Sparkle".to_string(),
+            description: "Keyboard lights sparkle in sync with system audio.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "sensitivity".to_string(),
+                    label: "Sensitivity".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.1,
+                },
+                ParameterConfig {
+                    name: "base_density".to_string(),
+                    label: "Base Density".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.0,
+                    max: 0.5,
+                    default: 0.0,
+                    step: 0.01,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "audio_sparkle_rainbow".to_string(),
+            display_name: "Audio Sparkle Rainbow".to_string(),
+            description: "Rainbow sparkles that react to system audio.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "sensitivity".to_string(),
+                    label: "Sensitivity".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.1,
+                },
+                ParameterConfig {
+                    name: "base_density".to_string(),
+                    label: "Base Density".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.0,
+                    max: 0.5,
+                    default: 0.0,
+                    step: 0.01,
+                },
+                ParameterConfig {
+                    name: "rainbow_speed".to_string(),
+                    label: "Rainbow Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 5.0,
+                    default: 1.0,
+                    step: 0.1,
+                },
+            ],
+        },
+        PresetMetadata {
+            name: "audio_sparkle_media".to_string(),
+            display_name: "Audio Sparkle Media".to_string(),
+            description: "Sparkles that match screen colors and react to audio.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "sensitivity".to_string(),
+                    label: "Sensitivity".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.1,
+                },
+                ParameterConfig {
+                    name: "base_density".to_string(),
+                    label: "Base Density".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.0,
+                    max: 0.5,
+                    default: 0.0,
+                    step: 0.01,
+                },
+            ],
+        },
+        PresetMetadata {
             name: "ocean".to_string(),
             display_name: "Ocean Wave".to_string(),
             description: "Looks like rolling water across the keyboard.".to_string(),
@@ -534,4 +618,7 @@ pub mod rpm;
 pub mod thermalStatus;
 pub mod ambient;
 pub mod horizon;
+pub mod audio_sparkle;
+pub mod audio_sparkle_rainbow;
+pub mod audio_sparkle_media;
 //pub mod thermalStatus;
