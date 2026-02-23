@@ -4,6 +4,7 @@
 )]
 
 mod audio_sampler;
+mod input_handler;
 mod effects;
 mod installer;
 mod led_driver;
@@ -44,6 +45,7 @@ use crate::presets::{
     audio_sparkle::AudioSparkleEffect,
     audio_sparkle_rainbow::AudioSparkleRainbowEffect,
     audio_sparkle_media::AudioSparkleMediaEffect,
+    rainbow_ripple::RainbowRippleEffect,
     ParameterValue,
     PresetConfig,
 };
@@ -540,6 +542,36 @@ fn set_preset(
 
             Box::new(AudioSparkleMediaEffect::new(sampler_audio, sampler_media, sensitivity, base_density))
         }
+        "rainbow_ripple" => {
+            let speed: f32 = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(40.0);
+            
+            let width: f32 = preset_config
+                .parameters
+                .get("width")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(3.0);
+
+            let lifetime: f32 = preset_config
+                .parameters
+                .get("lifetime")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(0.8);
+
+            Box::new(RainbowRippleEffect::new(speed, width, lifetime))
+        }
         "ocean" => {
             let speed = preset_config
                 .parameters
@@ -734,7 +766,10 @@ fn main() {
         .add_native_item(tauri::SystemTrayMenuItem::Separator)
         .add_item(quit_item);
 
-    tauri::Builder::default()
+    // Start global keyboard listener for reactive effects
+    crate::input_handler::start_key_listener();
+
+    let _app = tauri::Builder::default()
         .manage(app_state)
         // CRITICAL FIX: Only one invoke_handler call with all commands
         .invoke_handler(tauri::generate_handler![

@@ -468,6 +468,40 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
             ],
         },
         PresetMetadata {
+            name: "rainbow_ripple".to_string(),
+            display_name: "Typing Rainbow Ripple".to_string(),
+            description: "Rainbow waves that expand from the keys you press.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 10.0,
+                    max: 100.0,
+                    default: 40.0,
+                    step: 1.0,
+                },
+                ParameterConfig {
+                    name: "width".to_string(),
+                    label: "Width".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 1.0,
+                    max: 10.0,
+                    default: 3.0,
+                    step: 0.1,
+                },
+                ParameterConfig {
+                    name: "lifetime".to_string(),
+                    label: "Lifetime".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 2.0,
+                    default: 0.8,
+                    step: 0.1,
+                },
+            ],
+        },
+        PresetMetadata {
             name: "ocean".to_string(),
             display_name: "Ocean Wave".to_string(),
             description: "Looks like rolling water across the keyboard.".to_string(),
@@ -621,4 +655,5 @@ pub mod horizon;
 pub mod audio_sparkle;
 pub mod audio_sparkle_rainbow;
 pub mod audio_sparkle_media;
+pub mod rainbow_ripple;
 //pub mod thermalStatus;
