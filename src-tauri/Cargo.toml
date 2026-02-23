@@ -1,6 +1,6 @@
 [package]
 name = "led-controller-driver"
-version = "0.1.0"
+version = "0.1.1"
 description = "Rust driver for lenovo 24 zone rgb keyboard"
 authors = ["Dhruv Goel"]
 edition = "2021"
@@ -20,6 +20,7 @@ rand = "0.8"
 winreg = "0.52"
 sysinfo = "0.38.0"
 nvml-wrapper = "0.11.0"
+cpal = "0.15"
 tokio = { version = "1", features = ["full"] }
 windows = { version = "0.52", features = [
     "Win32_Graphics_Direct3D",
@@ -31,6 +32,7 @@ windows = { version = "0.52", features = [
     "Win32_Foundation"
 ] }
 anyhow = "1.0"
+rdev = "0.5"
 
 [lib]
 name = "led_driver"
