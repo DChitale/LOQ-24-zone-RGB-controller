@@ -21,7 +21,6 @@ use crate::presets::{
     // edgeGlow::LiquidEdgeEffect,
     // energyPulse::EnergyPulseEffect,
     // fireFlow::FireFlowEffect,
-    heatwave::HeatWaveEffect,
     horse::HorseEffect,
     horseCycle::SmoothHorseCycleEffect,
     // nebula::NebulaEffect,
@@ -41,10 +40,10 @@ use crate::presets::{
     wheel::ColorWheelEffect,
     thermalStatus::ThermalStatusEffect,
     ambient::AmbientEffect,
-    horizon::EventHorizon,
     audio_sparkle::AudioSparkleEffect,
     audio_sparkle_rainbow::AudioSparkleRainbowEffect,
     audio_sparkle_media::AudioSparkleMediaEffect,
+    audio_ripple::AudioRippleEffect,
     rainbow_ripple::RainbowRippleEffect,
     ParameterValue,
     PresetConfig,
@@ -421,17 +420,6 @@ fn set_preset(
                 .unwrap_or(0.5);
             Box::new(AuroraEffect::new(speed))
         }
-        "heatwave" => {
-            let speed = preset_config
-                .parameters
-                .get("speed")
-                .and_then(|v| match v {
-                    ParameterValue::Float(f) => Some(*f),
-                    _ => None,
-                })
-                .unwrap_or(1.0);
-            Box::new(HeatWaveEffect::new(speed))
-        }
         "scan" => {
             let speed = preset_config
                 .parameters
@@ -542,6 +530,45 @@ fn set_preset(
 
             Box::new(AudioSparkleMediaEffect::new(sampler_audio, sampler_media, sensitivity, base_density))
         }
+        "audio_ripple" => {
+            let sensitivity: f32 = preset_config
+                .parameters
+                .get("sensitivity")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(1.0);
+            let speed: f32 = preset_config
+                .parameters
+                .get("speed")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(40.0);
+            let width: f32 = preset_config
+                .parameters
+                .get("width")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(3.0);
+            let lifetime: f32 = preset_config
+                .parameters
+                .get("lifetime")
+                .and_then(|v| match v {
+                    ParameterValue::Float(f) => Some(*f),
+                    _ => None,
+                })
+                .unwrap_or(0.8);
+
+            let sampler = crate::audio_sampler::AudioSampler::new()
+                .map_err(|e| e.to_string())?;
+
+            Box::new(AudioRippleEffect::new(sampler, sensitivity, speed, width, lifetime))
+        }
         "rainbow_ripple" => {
             let speed: f32 = preset_config
                 .parameters
@@ -572,18 +599,6 @@ fn set_preset(
 
             Box::new(RainbowRippleEffect::new(speed, width, lifetime))
         }
-        "ocean" => {
-            let speed = preset_config
-                .parameters
-                .get("speed")
-                .and_then(|v| match v {
-                    ParameterValue::Float(f) => Some(*f),
-                    _ => None,
-                })
-                .unwrap_or(1.0);
-            Box::new(crate::presets::ocean::OceanWaveEffect::new(speed))
-        }
-        
         "nebula" => {
             let speed = preset_config
                 .parameters
@@ -606,51 +621,6 @@ fn set_preset(
                 .unwrap_or(1.0);
             Box::new(crate::presets::chromaticBreath::ChromaticBreathEffect::new(
                 speed,
-            ))
-        }
-        
-        "silk" => {
-            let speed = preset_config
-                .parameters
-                .get("speed")
-                .and_then(|v| match v {
-                    ParameterValue::Float(f) => Some(*f),
-                    _ => None,
-                })
-                .unwrap_or(1.0);
-            Box::new(crate::presets::silk::SilkAmbientEffect::new(speed))
-        }
-        "horizon" => {
-            Box::new(EventHorizon::new())
-        }
-        
-        "stillgradient" => {
-            let color_a = preset_config
-                .parameters
-                .get("color_a")
-                .and_then(|v| match v {
-                    ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)),
-                    _ => None,
-                })
-                .unwrap_or(Color::new(89, 108, 128));
-            let color_b = preset_config
-                .parameters
-                .get("color_b")
-                .and_then(|v| match v {
-                    ParameterValue::Color { r, g, b } => Some(Color::new(*r, *g, *b)),
-                    _ => None,
-                })
-                .unwrap_or(Color::new(88, 75, 118));
-            let middle = preset_config
-                .parameters
-                .get("middle")
-                .and_then(|v| match v {
-                    ParameterValue::Float(i) => Some(*i),
-                    _ => None,
-                })
-                .unwrap_or(12.0);
-            Box::new(crate::presets::stillGradient::StillGradientEffect::new(
-                color_a, color_b, middle,
             ))
         }
         
