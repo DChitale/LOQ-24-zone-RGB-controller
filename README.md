@@ -1,294 +1,165 @@
-# Lenovo 24-Zone RGB controller
-## Blazing-fast Tauri app using Rust + Next.js
+# Lenovo 24-Zone RGB Controller
 
-![Logo](https://skillicons.dev/icons?i=tauri,rust,next)
+[![Tauri / Rust / Next.js](https://skillicons.dev/icons?i=tauri,rust,next)](https://tauri.app/)
 
+A lightweight, high-performance controller for managing 24 independent RGB zones. Designed for speed, flexibility, and smooth lighting effects on Lenovo devices, powered by a bleeding-edge stack using Rust, Tauri, and Next.js.
 
+## ✨ Features
 
-A lightweight, high-performance controller for managing 24 independent RGB zones. Designed for speed, flexibility, and smooth lighting effects.
-## Features
-- 24 RGB zones with independent control
-- Low-latency updates for smooth animations upto 60fps
-- Modular architecture for easy customization
-- Lightweight and efficient — minimal resource usage
-- Direct USB HID control
+- **Granular Control:** 24 RGB zones with independent control.
+- **High Performance:** Low-latency updates for smooth animations up to 60 FPS, driven directly by a Rust backend.
+- **Modular Architecture:** Build and integrate new custom lighting presets with ease.
+- **Resource Efficient:** Minimal system footprint compared to heavy manufacturer software.
+- **Direct USB HID Control:** Speaks natively to the hardware backend.
 
-# Currently Supported Effects
+## 🎨 Supported Effects
 
-- Static color
+- Static Color
 - CPU-Mem-GPU usage status
-- Screen Ambiance light effect.
+- Screen Ambiance *(Reactive)*
 - Color Breath
 - Pulse Center
-- Horse Color
-- Horse Cycle
+- Horse Color & Horse Cycle
 - Ferrari RPM
-- Rainbow Breath
-- Rainbow Cycle
-- Rainbow Wave
-- ColorWheelEffect
-- Color sweep
+- Rainbow Breath, Rainbow Cycle, & Rainbow Wave
+- ColorWheelEffect & Color sweep
 - Aurora
-- Heat Wave
 - Color Scan
 - Sparkle
-- Ocean Wave
-- Horizon
 - Nebula
 - Chromatic Breath
-- Silk
-- Still Gradient
+- **Audio Reactive:** Audio Sparkle, Audio Sparkle Rainbow, Audio Sparkle Media, Audio Ripple
+- **Typing Reactive:** Typing Rainbow Ripple
 
+> **Note:** A few effects may have minor inconsistencies depending on local environment settings (e.g., *Screen Ambiance* relies on external services like DXGI, and *CPU-Mem-GPU usage* depends on Sysinfo/NVML). Complex dynamic effects must follow the provided Rust templates.
 
-> A few effects may have some hiccups in their settings.
-> Dynamic Effects like "Screen Ambiance" depends on eternal services like DXGI
-> "CPU-Mem-GPU usage status" depends on Sysinfo and NVML (rust crates).
-> More complex effects can be implemented, but they must strictly follow the provided template.
+---
 
-Quick start — development (Windows)
-----------------------------------
-Prereqs (minimal):
-- Node.js 18+ and npm (or pnpm/yarn)
-- Rust + cargo (installed via `rustup`, MSVC toolchain)
-- Visual Studio Build Tools ("Desktop development with C++" workload)
+## 🚀 Quick Start — Development (Windows)
 
-Frontend-only (fast):
+### Prerequisites
+- [Node.js](https://nodejs.org/) (18+) and your preferred package manager (npm, pnpm, yarn)
+- [Rust & Cargo](https://rustup.rs/) (installed via `rustup`, MSVC toolchain)
+- Visual Studio Build Tools (Requires the *"Desktop development with C++"* workload)
 
+### Frontend-Only Mode (Fast UI Iteration)
+Mock the UI and tweak frontend logic without spinning up the Rust backend.
 ```bash
-# start Next.js dev server
 npm install
 npm run dev
-# open http://localhost:3000
+# App will be accessible at http://localhost:3000
 ```
 
-Full desktop app (Tauri + frontend):
-
+### Full Desktop Application (Tauri + Next.js)
+Launch the fully integrated desktop application with the Rust backend handling live USB HID communication.
 ```bash
-# from repo root
 npm install
-# run the integrated app (bundles frontend + Rust backend in dev)
 npm run tauri -- dev
-# or, if you have tauri installed globally:
-# npx tauri dev
 ```
 
-Build & produce installers (Windows)
-------------------------------------
-1. Produce frontend production build:
+---
 
-```bash
-npm run build
-```
+## 📦 Building & Packaging (Windows)
 
-2. Build Tauri bundle (creates installer in `src-tauri/target/release/bundle/`):
+1. **Production Frontend Build:**
+   Compile the Next.js assets for production.
+   ```bash
+   npm run build
+   ```
 
-```bash
-npm run tauri -- build
-# artifacts -> src-tauri/target/release/bundle/
-```
+2. **Package the Native App:**
+   Build the Tauri application bundle.
+   ```bash
+   npm run tauri -- build
+   ```
+   > *Build artifacts (MSI / NSIS installers) will be generated and placed in `src-tauri/target/release/bundle/` upon success.*
 
-Notes for Windows packaging
-- Ensure the MSVC toolchain is installed (Rust + MSVC). Visual Studio Build Tools with C++ is required.
-- Installer artifacts (NSIS/MSI) appear under `src-tauri/target/release/bundle/` after a successful build.
-- Try to use .msi installer but if windows gives any error run the nsis installer.
+**Packaging Notes:**
+- Ensure the MSVC toolchain is completely installed. 
+- Using the `.msi` installer is recommended. If Windows encounters a deployment error, fallback to the NSIS executable.
 
-Architecture — where things live
---------------------------------
-- Frontend (UI): `src/app/` — React + Next.js (components in `src/app/components/`).
-- Tauri + Rust backend: `src-tauri/src/` — hardware driver, effect runner, presets.
-  - LED driver & hardware: `src-tauri/src/led_driver.rs`
-  - Effects & presets: `src-tauri/src/presets/`
-  - App entry: `src-tauri/src/main.rs`
-- Build outputs: `src-tauri/target/release/bundle/` (installers/bundles).
+---
 
-Key features
-- Real-time LED effects driven in Rust for low-latency control
-- Modern React UI in Next.js for configuration & previews
-- Cross-platform packaging via Tauri (Windows-first assets present)
+## 🏗️ Architecture Overview
 
-Common developer tasks
-----------------------
-- Lint frontend: `npm run lint`
-- Run only Rust code (inside `src-tauri`):
-  - `cd src-tauri && cargo run` (runs the Rust binary)
-  - `cd src-tauri && cargo build --release`
-- Format & check Rust: `cd src-tauri && cargo fmt && cargo clippy`
+- **Frontend (UI):** `src/app/` — Built with React and Next.js. (Components reside in `src/app/components/`)
+- **Backend (Tauri + Rust):** `src-tauri/src/` — Manages the hardware driver, effect loops, and plugin presets.
+  - *Hardware Driver:* `src-tauri/src/led_driver.rs`
+  - *Effect Protocols:* `src-tauri/src/presets/`
+  - *Entry Point:* `src-tauri/src/main.rs`
+- **Build Output:** `src-tauri/target/release/bundle/`
 
-Custom effects
---------------
-If you want to make any custom effect then strictly follow the template given in the `src-tauri/src/effects.rs`.
-One can write any static or dynamic effect he/she wants, it is recommended to  also checkout the `src-tauri/src/led_driver.rs` as this file contains the actual driver code which communicates with the hardware.
+---
 
-Effects can be made using rust and any external crate that you may need, Steps to follow-
-- Create a rust file under `src-tauri/src/presets` name the file according to you effects.
-- Implement all the traits/functions/methods that you need from the `effects.rs` file (You can also just give the entire `effects.rs` file to a LLM and and make a effect that way).
-- Once the effects logic is completed then we have to register that effects for frontend and for the backend which actually runs the effects.
-    1. In `src-tauri/src/presets/mod.rs` add your effect, example 
-        ``` Rust
-        pub mod ambient;
-        ```
-    2.  Then in the same file add all the `PresetMetadata` in the function `get_available_presets()`, example
-        ```Rust
-        PresetMetadata {
-            name: "ambient".to_string(),
-            display_name: "Screen Ambiance light effect.".to_string(),
-            description: "Mimics ambient light based on screen content.".to_string(),
-            parameters: vec![
-                ParameterConfig
-                {name: "speed".to_string(),
-                    label: "Speed".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.1,
-                    max: 5.0,
-                    default: 1.0,
-                    step: 0.1,},
-                ParameterConfig {
-                    name: "smoothing".to_string(),
-                    label: "Smoothing".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.0,
-                    max: 10.0,
-                    default: 5.0,
-                    step: 0.1,
-                },
-                ParameterConfig {
-                    name: "sample_top".to_string(),
-                    label: "Screen sample top".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.0,
-                    max: 1.0,
-                    default: 0.85,
-                    step: 0.01,
-                },
-                ParameterConfig {
-                    name: "sample_left".to_string(),
-                    label: "Screen sample left".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.0,
-                    max: 1.0,
-                    default: 0.0,
-                    step: 0.01,
-                },
-                ParameterConfig {
-                    name: "sample_width".to_string(),
-                    label: "Screen sample width".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.01,
-                    max: 1.0,
-                    default: 1.0,
-                    step: 0.01,
-                },
-            ],
-        },
-        ```
-    3. Then register the effect in `src-tauri/src/main.rs`  under `use crate::presets`, example
-        ```Rust
-        ambient::AmbientEffect,
-        ```
-    4. Under function `set_preset` in `main.rs` register your effect.
-        ```Rust
-        "ambient" => {
-            #[cfg(not(target_os = "windows"))]
-            return Err("Ambient effect is only supported on Windows".to_string());
-            #[cfg(target_os = "windows")]
-            {
-                let smoothing: f32 = preset_config
-                    .parameters
-                    .get("smoothing")
-                    .and_then(|v| match v {
-                        ParameterValue::Float(f) => Some(*f),
-                        _ => None,
-                    })
-                    .unwrap_or(1.0);
+## 🛠️ Creating Custom Effects
 
-                // create sampler and apply parameters (preset overrides global settings)
-                let mut sampler = crate::presets::ambient::DxgiScreenSampler::new()
-                    .map_err(|e| e.to_string())?;
+You can implement entirely customized static or dynamic effects using Rust. Use the `src-tauri/src/effects.rs` interface template to get started.
 
-                // apply preset parameters if provided
-                let preset_top = preset_config
-                    .parameters
-                    .get("sample_top")
-                    .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None });
-                let preset_left = preset_config
-                    .parameters
-                    .get("sample_left")
-                    .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None });
-                let preset_width = preset_config
-                    .parameters
-                    .get("sample_width")
-                    .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None });
+1. **Create the Effect File:**
+   Create a new file under `src-tauri/src/presets/` (e.g., `my_custom_effect.rs`) and implement the `Effect` trait.
+2. **Register the Module:**
+   Open `src-tauri/src/presets/mod.rs` and expose your module:
+   ```rust
+   pub mod my_custom_effect;
+   ```
+3. **Define Preset Metadata:**
+   In the `get_available_presets()` function inside `presets/mod.rs`, add your `PresetMetadata` config block. This will automatically expose your effect to the Frontend UI along with any adjustable parameters (Speed, Density, Size, Colors).
+4. **Hook into the Runner:**
+   In `src-tauri/src/main.rs`, import your effect module and append it to the `match preset_name_lc.as_str()` arm block inside the `set_preset` Tauri command.
+5. **Manage Dependencies:**
+   If your effect relies on external crates (e.g., for audio routing or system hooks), add them to `src-tauri/Cargo.toml`.
 
-                if let (Some(t), Some(l), Some(w)) = (preset_top, preset_left, preset_width) {
-                    sampler.set_sample_top_fraction(t);
-                    sampler.set_sample_horizontal_region(l, w);
-                } else if let Ok(s) = crate::settings::load_settings() {
-                    // fallback to global settings
-                    sampler.set_sample_top_fraction(s.ambient_sample_top_fraction);
-                    sampler.set_sample_horizontal_region(
-                        s.ambient_sample_left_fraction,
-                        s.ambient_sample_width_fraction,
-                    );
-                }
+> **Tip:** We recommend reading the `src-tauri/src/led_driver.rs` file to understand how the internal buffer pushes frames to the hardware.
 
-                Box::new(AmbientEffect::new(sampler, smoothing))
-            }
-        },
-        ```
-    5. Only if you are using External crates then add those in `src-tauri/cargo.toml`
+---
 
+## 🐛 Troubleshooting & Tips
 
-Troubleshooting & tips
-----------------------
-> If the hardware isn't detected: run the app as Administrator (Windows), check Device Manager, and confirm USB/HID permissions.
-> If the effect is not running on hardware check the `Windows Dynamic Lighting` and make sure it is turned on and in the driver application under settings click on `Take_Control_Now`
-> The lenovo legion software might try to take the control back sometimes.
+- **Device Not Detected:** Ensure you are running the app as an Administrator. Check Device Manager to confirm your device is transmitting USB/HID data normally.
+- **Lights Freezing/Overridden:** Ensure `Windows Dynamic Lighting` is toggled ON in Windows Settings. Other manufacturer software (e.g., Lenovo Legion Vantage) may try to aggressively regain control of the HID endpoints.
+- **Hardware PID/VID Mismatch:** If your keyboard remains dark, check the generic `PID` and `VID` of your device through Device Manager and update the raw declarations inside `src-tauri/src/led_driver.rs`.
+- **Debugging:** Tauri developer logs will seamlessly pipe directly into your command line output while running `npm run tauri -- dev`.
+- **Rust Toolchains:** Ensure you are fully on the stable MSVC stream: `rustup default stable-x86_64-pc-windows-msvc`.
 
-- Check for the `PID` and `VID` of your device and update that in `src-tauri/src/led_driver.rs`
-- Tauri dev logs: visible in the terminal where you ran `npm run tauri -- dev`.
-- Frontend-only issues: check the Next.js terminal output and `console` in the browser.
-- Common Rust build errors: install the MSVC toolchain and run `rustup default stable-x86_64-pc-windows-msvc`.
-- If packaging fails with NSIS errors, confirm `makensis` is in PATH (Tauri typically installs it or documents how to get it).
+---
 
-Where to look when changing behavior
------------------------------------
-- UI: `src/app/components/` (controls, sidebar, brightness, setter)
-- Effects engine & presets: `src-tauri/src/effect_runner.rs`, `src-tauri/src/presets/*.rs`
-- Hardware layer: `src-tauri/src/led_driver.rs`, `src-tauri/src/lighting.rs`
-- App integration: `src-tauri/src/main.rs` and `src-tauri/tauri.conf.json`
+## 🤝 Contributing
 
-Testing with hardware
----------------------
-- Prefer using a development board or loopback to avoid damaging LEDs.
-- Add verbose logs in Rust (`log`/`tracing`) and view them during `cargo run` or `npm run tauri -- dev`.
+We welcome contributions ranging from bug fixes and code refactoring to documentation and new preset effects!
 
-Contributing
-------------
-- Open issues for bugs or feature requests.
-- For code changes: create a branch, keep commits focused, and open a PR with a short description and testing steps.
-- Run linters/formatters before PR: `npm run lint` and `cd src-tauri && cargo fmt`.
+### How to Contribute
 
-Useful commands (quick reference)
----------------------------------
-- Dev front end: `npm run dev`
-- Dev full app: `npm run tauri -- dev`
-- Build frontend: `npm run build`
-- Build release bundle: `npm run tauri -- build`
-- Lint: `npm run lint`
-- Rust build: `cd src-tauri && cargo build --release`
+1. **Fork & Clone:** Fork the repository to your own account and pull it locally.
+2. **Create a Branch:** Keep your workflow clean by branching off `main`.
+   ```bash
+   git checkout -b feature/my-amazing-effect
+   ```
+3. **Write Quality Code:**
+   - Keep commits focused, modular, and self-contained.
+   - Run the frontend linter: `npm run lint`
+   - Run the Rust formatter and linter: 
+     ```bash
+     cd src-tauri 
+     cargo fmt
+     cargo clippy
+     ```
+4. **Hardware Validation:** If your PR interacts with the timing loop or the hardware drivers directly, please clearly mention how you tested it (hardware topology, OS version). Try to test complex patterns using a software loopback to prevent writing harmful buffer combinations to the LEDs.
+5. **Submit a Pull Request:** Open a PR back to this repository and include a clear summary of your additions and steps confirming how they were verified. 
 
-License
--------
-This project includes a `LICENSE` file in the repository root — follow the terms in that file.
+---
 
-Contact / next steps
----------------------
-- To get started: run `npm install` then `npm run tauri -- dev` and connect your controller hardware. ✅
-- If you'd like, I can add a short **Contributing** checklist, CI steps, or a Windows quick-install script next. 💡
+## 📋 Pending Roadmap
 
-Pending Features
-----------------
-- Support for different `PID` and `VID` under hardware.
-- Implementation of custom Effects Engine using JSON.
-- There are still some bugs left to iron out.
-- Spuuort for Linux.
+- [ ] Support flexible `PID` and `VID` lookup tables to support more generic Lenovo iterations.
+- [ ] Transition the internal hard-coded effects engine over to a dynamic JSON-based loader.
+- [ ] Ongoing stability, thread-locking, and bug patching across hardware sleep/wake lifecycles.
+- [ ] Native support and drivers for Unix/Linux environments.
+
+---
+
+## 📜 License
+
+This project includes a `LICENSE` file in the repository root — please follow and respect the terms provided in that file.
+
+---
+*Created by the project contributors. Designed for ultimate keyboard control without the system bloat.*
