@@ -336,22 +336,6 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
             ],
         },
         PresetMetadata {
-            name: "heatwave".to_string(),
-            display_name: "Heat Wave".to_string(),
-            description: "Warm flowing wave".to_string(),
-            parameters: vec![
-                ParameterConfig {
-                    name: "speed".to_string(),
-                    label: "Speed".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.1,
-                    max: 4.0,
-                    default: 1.0,
-                    step: 0.1,
-                },
-            ],
-        },
-        PresetMetadata {
             name: "scan".to_string(),
             display_name: "Color Scan".to_string(),
             description: "Scanning color effect".to_string(),
@@ -468,6 +452,49 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
             ],
         },
         PresetMetadata {
+            name: "audio_ripple".to_string(),
+            display_name: "Audio Ripple".to_string(),
+            description: "Ripples flash from the center on audio beats.".to_string(),
+            parameters: vec![
+                ParameterConfig {
+                    name: "sensitivity".to_string(),
+                    label: "Sensitivity".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 10.0,
+                    default: 1.0,
+                    step: 0.1,
+                },
+                ParameterConfig {
+                    name: "speed".to_string(),
+                    label: "Speed".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 10.0,
+                    max: 100.0,
+                    default: 40.0,
+                    step: 1.0,
+                },
+                ParameterConfig {
+                    name: "width".to_string(),
+                    label: "Width".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 1.0,
+                    max: 10.0,
+                    default: 3.0,
+                    step: 0.1,
+                },
+                ParameterConfig {
+                    name: "lifetime".to_string(),
+                    label: "Lifetime".to_string(),
+                    param_type: ParameterType::Float,
+                    min: 0.1,
+                    max: 2.0,
+                    default: 0.8,
+                    step: 0.1,
+                },
+            ],
+        },
+        PresetMetadata {
             name: "rainbow_ripple".to_string(),
             display_name: "Typing Rainbow Ripple".to_string(),
             description: "Rainbow waves that expand from the keys you press.".to_string(),
@@ -502,28 +529,6 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
             ],
         },
         PresetMetadata {
-            name: "ocean".to_string(),
-            display_name: "Ocean Wave".to_string(),
-            description: "Looks like rolling water across the keyboard.".to_string(),
-            parameters: vec![
-                ParameterConfig {
-                    name: "speed".to_string(),
-                    label: "Speed".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.1,
-                    max: 10.0,
-                    default: 1.0,
-                    step: 0.01,
-                },
-            ],
-        },
-        PresetMetadata{
-            name: "horizon".to_string(),
-            display_name: "Horizon".to_string(),
-            description: "Looks like a black hole".to_string(),
-            parameters: vec![],
-        },
-        PresetMetadata {
             name: "nebula".to_string(),
             display_name: "Nebula".to_string(),
             description: "Soft, atmospheric, zero harsh transitions.".to_string(),
@@ -556,57 +561,6 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
                 },
             ],
         },
-        PresetMetadata {
-            name: "silk".to_string(),
-            display_name: "Silk".to_string(),
-            description: "Feels like light breathing through fabric, Slow hue drift + heavy smoothing.".to_string(),
-            parameters: vec![
-                ParameterConfig {
-                    name: "speed".to_string(),
-                    label: "Speed".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.1,
-                    max: 10.0,
-                    default: 1.0,
-                    step: 0.01,
-                },
-            ],
-        },
-       
-        PresetMetadata {
-            name: "stillGradient".to_string(),
-            display_name: "Still Gradient".to_string(),
-            description: "Just perfectly distributed light, This is peak minimalism".to_string(),
-            parameters: vec![
-                ParameterConfig {
-                    name: "color_a".to_string(),
-                    label: "Color A".to_string(),
-                    param_type: ParameterType::Color {r: 89, g: 108, b: 128},
-                    min: 0.0,
-                    max: 0.0,
-                    default: 0.0,
-                    step: 0.0,
-                },
-                ParameterConfig {
-                    name: "color_b".to_string(),
-                    label: "Color B".to_string(),
-                    param_type: ParameterType::Color { r: 88, g: 75, b: 115 },
-                    min: 0.0,  // Not used for colors
-                    max: 255.0, // Not used for colors
-                    default: 0.0, // Not used for colors
-                    step: 1.0, // Not used for colors
-                },
-                ParameterConfig {
-                    name: "middle".to_string(),
-                    label: "Set the gradient mix".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.0,  // Not used for colors
-                    max: 24.0, // Not used for colors
-                    default: 12.0, // Not used for colors
-                    step: 1.0, // Not used for colors
-                },
-            ],
-        },
     ]
 }
 
@@ -627,19 +581,15 @@ pub fn adjust_preset_parameter(_preset_name: String, _param_name: String, _value
 pub mod off;
 pub mod pulse;
 pub mod scan;
-pub mod heatwave;
 pub mod sparkle;
 pub mod aurora;
 pub mod keyRipple;
-pub mod ocean;
 pub mod energyPulse;
 pub mod nebula;
 pub mod chromaticBreath;
 pub mod fireFlow;
-pub mod silk;
 pub mod staticColor;
 pub mod edgeGlow;
-pub mod stillGradient;
 pub mod rainbowCycle;
 pub mod rainbowWave;
 pub mod breathing;
@@ -651,9 +601,8 @@ pub mod horseCycle;
 pub mod rpm;
 pub mod thermalStatus;
 pub mod ambient;
-pub mod horizon;
 pub mod audio_sparkle;
 pub mod audio_sparkle_rainbow;
 pub mod audio_sparkle_media;
 pub mod rainbow_ripple;
-//pub mod thermalStatus;
+pub mod audio_ripple;

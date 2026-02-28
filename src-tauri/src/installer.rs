@@ -60,15 +60,21 @@ if (Test-Path $devicesPath) {
         # Create new task
         $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File `"$scriptPath`""
         
-        $trigger = New-ScheduledTaskTrigger -AtLogOn
+        $trigger1 = New-ScheduledTaskTrigger -AtLogOn
+        $trigger1.Delay = "PT$($delaySeconds)S"
         
-        # Add user-configured delay
-        $trigger.Delay = "PT$($delaySeconds)S"
+        $trigger2 = New-CimInstance -ClassName MSFT_TaskSessionStateChangeTrigger -Namespace Root\Microsoft\Windows\TaskScheduler -ClientOnly
+        $trigger2.StateChange = 8
+        $trigger2.Delay = "PT$($delaySeconds)S"
+        
+        $trigger3 = New-CimInstance -ClassName MSFT_TaskSessionStateChangeTrigger -Namespace Root\Microsoft\Windows\TaskScheduler -ClientOnly
+        $trigger3.StateChange = 7
+        $trigger3.Delay = "PT$($delaySeconds)S"
         
         $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -Hidden
         
         # Register the task
-        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Force | Out-Null
+        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger @($trigger1, $trigger2, $trigger3) -Settings $settings -Force | Out-Null
         
         Write-Output "Success"
     "#, TASK_NAME, script_path.replace("\\", "\\\\"), delay_seconds);
