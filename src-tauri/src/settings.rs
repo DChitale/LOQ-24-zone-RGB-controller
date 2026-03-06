@@ -26,6 +26,12 @@ pub struct AppSettings {
 
     #[serde(default = "default_ambient_sample_width")]
     pub ambient_sample_width_fraction: f32,
+
+    #[serde(default = "default_preset_cycle_shortcut")]
+    pub preset_cycle_shortcut: Option<String>,
+
+    #[serde(default = "default_preset_cycle_effects")]
+    pub preset_cycle_effects: Vec<String>,
 }
 
 impl Default for AppSettings {
@@ -38,6 +44,8 @@ impl Default for AppSettings {
             ambient_sample_top_fraction: 0.85,
             ambient_sample_left_fraction: 0.0,
             ambient_sample_width_fraction: 1.0,
+            preset_cycle_shortcut: None,
+            preset_cycle_effects: Vec::new(),
         }
     }
 }
@@ -48,6 +56,9 @@ fn default_brightness_level() -> f32 { 1.0 }
 fn default_ambient_sample_top() -> f32 { 0.85 }
 fn default_ambient_sample_left() -> f32 { 0.0 }
 fn default_ambient_sample_width() -> f32 { 1.0 }
+
+fn default_preset_cycle_shortcut() -> Option<String> { None }
+fn default_preset_cycle_effects() -> Vec<String> { Vec::new() }
 
 /// Get the path to the settings file
 fn get_settings_path() -> Result<PathBuf, Box<dyn std::error::Error>> {

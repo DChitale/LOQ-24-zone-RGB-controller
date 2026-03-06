@@ -63,6 +63,7 @@ pub struct AppState {
     pub should_run_effect: Arc<AtomicBool>,
     pub current_effect: Mutex<Option<Box<dyn Effect>>>,
     pub current_preset_params: Mutex<HashMap<String, ParameterValue>>,
+    pub preset_cycle_index: std::sync::atomic::AtomicUsize,
 }
 
 #[tauri::command]
@@ -114,10 +115,30 @@ fn get_settings() -> Result<settings::AppSettings, String> {
 }
 
 #[tauri::command]
-fn save_settings(settings: settings::AppSettings) -> Result<String, String> {
+fn save_settings(
+    settings: settings::AppSettings,
+    app: tauri::AppHandle,
+) -> Result<String, String> {
+    use tauri::GlobalShortcutManager;
+    
+    // Unregister all current app shortcuts before saving new ones
+    let mut manager = app.global_shortcut_manager();
+    let _ = manager.unregister_all();
+
     settings::save_settings(&settings)
-        .map(|_| "Settings saved successfully.".to_string())
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    // Register the new shortcut if provided and effects are available
+    if let Some(shortcut) = &settings.preset_cycle_shortcut {
+        if !shortcut.is_empty() && !settings.preset_cycle_effects.is_empty() {
+            let app_handle = app.clone();
+            let _ = manager.register(shortcut, move || {
+                cycle_preset(&app_handle);
+            });
+        }
+    }
+
+    Ok("Settings saved successfully.".to_string())
 }
 
 #[tauri::command]
@@ -179,6 +200,14 @@ fn set_preset(
     preset_name: String,
     parameters: std::collections::HashMap<String, ParameterValue>,
     state: State<AppState>,
+) -> Result<String, String> {
+    apply_preset(preset_name, parameters, state.inner())
+}
+
+fn apply_preset(
+    preset_name: String,
+    parameters: std::collections::HashMap<String, ParameterValue>,
+    state: &AppState,
 ) -> Result<String, String> {
     let preset_config = PresetConfig {
         name: preset_name,
@@ -639,6 +668,33 @@ fn set_preset(
     ))
 }
 
+fn cycle_preset(app_handle: &tauri::AppHandle) {
+    let settings = match settings::load_settings() {
+        Ok(s) => s,
+        Err(_) => return,
+    };
+    
+    let effects = settings.preset_cycle_effects;
+    if effects.is_empty() {
+        return;
+    }
+
+    let state = app_handle.state::<AppState>();
+    let current_index = state.preset_cycle_index.load(Ordering::SeqCst);
+    let next_index = (current_index + 1) % effects.len();
+    state.preset_cycle_index.store(next_index, Ordering::SeqCst);
+
+    let next_effect = &effects[next_index];
+    
+    // Here we can either pass default empty parameters or fetch some saved ones
+    // For cycling, we'll try to apply with empty parameters to let defaults take over
+    let parameters = HashMap::new();
+    
+    if let Err(e) = apply_preset(next_effect.clone(), parameters, state.inner()) {
+        eprintln!("Failed to cycle to preset {}: {}", next_effect, e);
+    }
+}
+
 #[tauri::command]
 fn adjust_preset_parameter(
     preset_name: String,
@@ -727,6 +783,7 @@ fn main() {
         should_run_effect: Arc::new(AtomicBool::new(true)),
         current_effect: Mutex::new(None),
         current_preset_params: Mutex::new(HashMap::new()),
+        preset_cycle_index: std::sync::atomic::AtomicUsize::new(0),
     };
 
     let show_item = CustomMenuItem::new("show", "Show");
@@ -828,6 +885,18 @@ fn main() {
 
             // START THE UNIVERSAL EFFECT LOOP (works with any effect)
             run_universal_effect_loop(handle.clone());
+            
+            // Register initial shortcut if configured
+            if let Some(shortcut) = &settings.preset_cycle_shortcut {
+                if !shortcut.is_empty() && !settings.preset_cycle_effects.is_empty() {
+                    use tauri::GlobalShortcutManager;
+                    let app_handle = handle.clone();
+                    let mut manager = handle.global_shortcut_manager();
+                    let _ = manager.register(shortcut, move || {
+                        cycle_preset(&app_handle);
+                    });
+                }
+            }
 
             Ok(())
         })

@@ -8,6 +8,13 @@ interface AppSettings {
     startup_delay_seconds: number;
     fix_on_app_launch: boolean;
     brightness_level?: number;
+    preset_cycle_shortcut?: string;
+    preset_cycle_effects?: string[];
+}
+
+interface PresetMetadata {
+    name: string;
+    display_name: string;
 }
 
 
@@ -23,15 +30,20 @@ export default function SettingsPage() {
     const [refreshing, setRefreshing] = useState(false);
     const [saveStatus, setSaveStatus] = useState('');
     const [refreshStatus, setRefreshStatus] = useState('');
+    const [presets, setPresets] = useState<PresetMetadata[]>([]);
+    const [isListeningShortcut, setIsListeningShortcut] = useState(false);
 
     useEffect(() => {
         loadSettings();
         checkStartupStatus();
+        loadPresets();
     }, []);
 
     async function loadSettings() {
         try {
             const loadedSettings = await invoke<AppSettings>('get_settings');
+            // ensure defaults for new fields if not present
+            if (!loadedSettings.preset_cycle_effects) loadedSettings.preset_cycle_effects = [];
             setSettings(loadedSettings);
         } catch (error) {
             console.error('Failed to load settings:', error);
@@ -43,16 +55,25 @@ export default function SettingsPage() {
         setIsStartupInstalled(installed);
     }
 
+    async function loadPresets() {
+        try {
+            const data = await invoke<PresetMetadata[]>('get_preset_metadata');
+            setPresets(data);
+        } catch (error) {
+            console.error('Failed to load presets:', error);
+        }
+    }
+
     async function saveSettings() {
         setLoading(true);
         setSaveStatus('PROCESSING...');
-        
+
         try {
             await invoke('save_settings', { settings });
-            
+
             if (settings.auto_fix_on_startup) {
-                await invoke('install_startup_task', { 
-                    delaySeconds: settings.startup_delay_seconds 
+                await invoke('install_startup_task', {
+                    delaySeconds: settings.startup_delay_seconds
                 });
                 setSaveStatus('✓ CONFIGURATION_APPLIED');
             } else {
@@ -61,20 +82,20 @@ export default function SettingsPage() {
                 }
                 setSaveStatus('✓ SETTINGS_SAVED');
             }
-            
+
             await checkStartupStatus();
             setTimeout(() => setSaveStatus(''), 3000);
         } catch (error) {
             setSaveStatus('✗ ERROR: ' + error);
         }
-        
+
         setLoading(false);
     }
 
     async function setLightingNow() {
         setRefreshing(true);
         setRefreshStatus('EXECUTING...');
-        
+
         try {
             const result = await invoke<string>('set_lighting_priority');
             setRefreshStatus('✓ CONTROL_ACQUIRED');
@@ -83,13 +104,64 @@ export default function SettingsPage() {
             setRefreshStatus('✗ FAILURE: ' + error);
             setTimeout(() => setRefreshStatus(''), 5000);
         }
-        
+
         setRefreshing(false);
     }
 
+    const handleShortcutKeyDown = (e: React.KeyboardEvent) => {
+        if (!isListeningShortcut) return;
+        e.preventDefault();
+
+        if (e.key === 'Escape') {
+            setIsListeningShortcut(false);
+            return;
+        }
+
+        if (e.key === 'Backspace' || e.key === 'Delete') {
+            setSettings(s => ({ ...s, preset_cycle_shortcut: undefined }));
+            setIsListeningShortcut(false);
+            return;
+        }
+
+        // simple modifier tracking
+        const keys = [];
+        if (e.ctrlKey) keys.push('CommandOrControl');
+        if (e.shiftKey) keys.push('Shift');
+        if (e.altKey) keys.push('Alt');
+
+        // ignore if only modifiers are pressed
+        if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+            return;
+        }
+
+        // format key (e.g., 'a' -> 'A')
+        const mainKey = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+        keys.push(mainKey);
+
+        const shortcutStr = keys.join('+');
+        setSettings(s => ({ ...s, preset_cycle_shortcut: shortcutStr }));
+        setIsListeningShortcut(false);
+    };
+
+    const addCycleEffect = (effectName: string) => {
+        setSettings(s => {
+            const current = s.preset_cycle_effects || [];
+            if (current.length >= 6 || current.includes(effectName)) return s;
+            return { ...s, preset_cycle_effects: [...current, effectName] };
+        });
+    };
+
+    const removeCycleEffect = (index: number) => {
+        setSettings(s => {
+            const current = [...(s.preset_cycle_effects || [])];
+            current.splice(index, 1);
+            return { ...s, preset_cycle_effects: current };
+        });
+    };
+
     return (
         <div className="flex flex-col md:flex-row h-screen bg-[#050505] text-zinc-400 font-sans selection:bg-zinc-800">
-            
+
             {/* LEFT: NAVIGATION */}
             <div className="w-full md:w-72 border-r border-zinc-900 p-10 flex flex-col justify-between bg-[#080808]/30">
                 <div className="space-y-12">
@@ -104,7 +176,7 @@ export default function SettingsPage() {
                         <button className="text-left px-4 py-3 text-[11px] uppercase tracking-widest text-white border-l border-white">
                             Control
                         </button>
-                       
+
                     </nav>
                 </div>
 
@@ -112,7 +184,7 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-2">
                         <Info size={10} />
                         <span className="text-[8px] uppercase tracking-widest font-mono">
-                            v1.0.0-STABLE
+                            v2.1.1-STABLE
                         </span>
                     </div>
                 </div>
@@ -121,7 +193,7 @@ export default function SettingsPage() {
             {/* RIGHT: MAIN WORKSPACE */}
             <div className="flex-1 overflow-y-auto px-10 md:px-24 py-20">
                 <div className="max-w-2xl space-y-20">
-                    
+
                     {/* Header */}
                     <section className="space-y-4">
                         <h1 className="text-4xl font-extralight tracking-tighter text-white italic">
@@ -158,8 +230,8 @@ export default function SettingsPage() {
                                 Execute immediate controller priority swap to Windows default
                             </p>
                         </div>
-                        
-                        <button 
+
+                        <button
                             onClick={setLightingNow}
                             disabled={refreshing}
                             className="w-full px-6 py-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -195,18 +267,16 @@ export default function SettingsPage() {
                                         Execute priority swap after login sequence
                                     </p>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => setSettings({
                                         ...settings,
                                         auto_fix_on_startup: !settings.auto_fix_on_startup
                                     })}
-                                    className={`w-10 h-5 flex items-center px-1 transition-colors duration-300 ${
-                                        settings.auto_fix_on_startup ? 'bg-white' : 'bg-zinc-800'
-                                    }`}
+                                    className={`w-10 h-5 flex items-center px-1 transition-colors duration-300 ${settings.auto_fix_on_startup ? 'bg-white' : 'bg-zinc-800'
+                                        }`}
                                 >
-                                    <div className={`w-3 h-3 transition-transform duration-300 ${
-                                        settings.auto_fix_on_startup ? 'translate-x-5 bg-black' : 'translate-x-0 bg-zinc-500'
-                                    }`} />
+                                    <div className={`w-3 h-3 transition-transform duration-300 ${settings.auto_fix_on_startup ? 'translate-x-5 bg-black' : 'translate-x-0 bg-zinc-500'
+                                        }`} />
                                 </button>
                             </div>
 
@@ -229,9 +299,9 @@ export default function SettingsPage() {
                                             </span>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="space-y-2">
-                                        <input 
+                                        <input
                                             type="range"
                                             min="30"
                                             max="300"
@@ -274,19 +344,101 @@ export default function SettingsPage() {
                                         Apply override when control panel initializes
                                     </p>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => setSettings({
                                         ...settings,
                                         fix_on_app_launch: !settings.fix_on_app_launch
                                     })}
-                                    className={`w-10 h-5 flex items-center px-1 transition-colors duration-300 ${
-                                        settings.fix_on_app_launch ? 'bg-white' : 'bg-zinc-800'
-                                    }`}
+                                    className={`w-10 h-5 flex items-center px-1 transition-colors duration-300 ${settings.fix_on_app_launch ? 'bg-white' : 'bg-zinc-800'
+                                        }`}
                                 >
-                                    <div className={`w-3 h-3 transition-transform duration-300 ${
-                                        settings.fix_on_app_launch ? 'translate-x-5 bg-black' : 'translate-x-0 bg-zinc-500'
-                                    }`} />
+                                    <div className={`w-3 h-3 transition-transform duration-300 ${settings.fix_on_app_launch ? 'translate-x-5 bg-black' : 'translate-x-0 bg-zinc-500'
+                                        }`} />
                                 </button>
+                            </div>
+
+                        </div>
+                    </section>
+
+                    {/* Preset Cycling Settings */}
+                    <section className="space-y-10">
+                        <div className="flex items-center gap-3">
+                            <Zap size={14} className="text-zinc-700" />
+                            <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">
+                                Preset_Cycling
+                            </h3>
+                        </div>
+
+                        <div className="space-y-4 border border-zinc-900 p-6 bg-zinc-900/10">
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-light text-zinc-200 uppercase tracking-tight">
+                                    Global Shortcut
+                                </h4>
+                                <p className="text-[10px] text-zinc-600">
+                                    Define a system-wide key combination to cycle through selected presets. Note: the app MUST be running in background.
+                                </p>
+                            </div>
+
+                            <div
+                                tabIndex={0}
+                                onKeyDown={handleShortcutKeyDown}
+                                onClick={() => setIsListeningShortcut(true)}
+                                onBlur={() => setIsListeningShortcut(false)}
+                                className={`w-full p-4 border flex justify-center items-center cursor-pointer transition-colors outline-none
+                                    ${isListeningShortcut
+                                        ? 'border-white text-white bg-zinc-800/50'
+                                        : 'border-zinc-800 text-zinc-400 hover:border-zinc-600'
+                                    }`}
+                            >
+                                <span className="text-xs uppercase tracking-[0.2em] font-mono">
+                                    {isListeningShortcut
+                                        ? 'PRESS KEY COMBINATION... (ESC to cancel, BACKSPACE to clear)'
+                                        : (settings.preset_cycle_shortcut || 'CLICK TO SET SHORTCUT')}
+                                </span>
+                            </div>
+
+                            <div className="pt-6 space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <h4 className="text-sm font-light text-zinc-200 uppercase tracking-tight">
+                                        Cycling Presets {(settings.preset_cycle_effects?.length || 0)}/6
+                                    </h4>
+                                    <select
+                                        className="bg-transparent border border-zinc-800 text-xs px-2 py-1 outline-none focus:border-zinc-500 rounded-none cursor-pointer"
+                                        value=""
+                                        onChange={(e) => addCycleEffect(e.target.value)}
+                                        disabled={(settings.preset_cycle_effects?.length || 0) >= 6}
+                                    >
+                                        <option value="" disabled>+ Add Preset</option>
+                                        {presets.map(p => (
+                                            <option key={p.name} value={p.name} disabled={(settings.preset_cycle_effects || []).includes(p.name)}>
+                                                {p.display_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2">
+                                    {(settings.preset_cycle_effects || []).map((effect, idx) => {
+                                        const display = presets.find(p => p.name === effect)?.display_name || effect;
+                                        return (
+                                            <div key={`${effect}-${idx}`} className="flex items-center justify-between border border-zinc-800 px-3 py-2 bg-zinc-900/30">
+                                                <span className="text-[10px] uppercase font-mono tracking-wider truncate mr-2">
+                                                    {idx + 1}. {display}
+                                                </span>
+                                                <button
+                                                    onClick={() => removeCycleEffect(idx)}
+                                                    className="text-zinc-600 hover:text-red-400 px-1"
+                                                >×</button>
+                                            </div>
+                                        );
+                                    })
+                                    }
+                                    {(settings.preset_cycle_effects?.length || 0) === 0 && (
+                                        <div className="col-span-full py-4 text-center border border-dashed border-zinc-800 text-[10px] text-zinc-600 uppercase tracking-widest">
+                                            No presets selected
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                         </div>
@@ -294,7 +446,7 @@ export default function SettingsPage() {
 
                     {/* Save Configuration */}
                     <section className="pt-6">
-                        <button 
+                        <button
                             onClick={saveSettings}
                             disabled={loading}
                             className="w-full px-6 py-4 border border-white text-white text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -317,14 +469,12 @@ export default function SettingsPage() {
                                 <span className="text-[9px] text-zinc-700 uppercase tracking-widest font-bold">
                                     Scheduled Task
                                 </span>
-                                <div className={`text-xl font-light tabular-nums ${
-                                    isStartupInstalled ? 'text-white' : 'text-zinc-600'
-                                }`}>
+                                <div className={`text-xl font-light tabular-nums ${isStartupInstalled ? 'text-white' : 'text-zinc-600'
+                                    }`}>
                                     {isStartupInstalled ? 'ACTIVE' : 'INACTIVE'}
                                 </div>
-                                <div className={`text-[8px] uppercase tracking-widest ${
-                                    isStartupInstalled ? 'text-zinc-500' : 'text-zinc-700'
-                                }`}>
+                                <div className={`text-[8px] uppercase tracking-widest ${isStartupInstalled ? 'text-zinc-500' : 'text-zinc-700'
+                                    }`}>
                                     {isStartupInstalled ? '✓ INSTALLED' : '○ NOT_CONFIGURED'}
                                 </div>
                             </div>
@@ -333,14 +483,12 @@ export default function SettingsPage() {
                                 <span className="text-[9px] text-zinc-700 uppercase tracking-widest font-bold">
                                     Auto-Fix Status
                                 </span>
-                                <div className={`text-xl font-light tabular-nums ${
-                                    settings.auto_fix_on_startup ? 'text-white' : 'text-zinc-600'
-                                }`}>
+                                <div className={`text-xl font-light tabular-nums ${settings.auto_fix_on_startup ? 'text-white' : 'text-zinc-600'
+                                    }`}>
                                     {settings.auto_fix_on_startup ? 'ENABLED' : 'DISABLED'}
                                 </div>
-                                <div className={`text-[8px] uppercase tracking-widest ${
-                                    settings.auto_fix_on_startup ? 'text-zinc-500' : 'text-zinc-700'
-                                }`}>
+                                <div className={`text-[8px] uppercase tracking-widest ${settings.auto_fix_on_startup ? 'text-zinc-500' : 'text-zinc-700'
+                                    }`}>
                                     {settings.auto_fix_on_startup ? `DELAY: ${settings.startup_delay_seconds}s` : 'MANUAL_MODE'}
                                 </div>
                             </div>
@@ -349,14 +497,12 @@ export default function SettingsPage() {
                                 <span className="text-[9px] text-zinc-700 uppercase tracking-widest font-bold">
                                     Launch Behavior
                                 </span>
-                                <div className={`text-xl font-light tabular-nums ${
-                                    settings.fix_on_app_launch ? 'text-white' : 'text-zinc-600'
-                                }`}>
+                                <div className={`text-xl font-light tabular-nums ${settings.fix_on_app_launch ? 'text-white' : 'text-zinc-600'
+                                    }`}>
                                     {settings.fix_on_app_launch ? 'AUTO' : 'MANUAL'}
                                 </div>
-                                <div className={`text-[8px] uppercase tracking-widest ${
-                                    settings.fix_on_app_launch ? 'text-zinc-500' : 'text-zinc-700'
-                                }`}>
+                                <div className={`text-[8px] uppercase tracking-widest ${settings.fix_on_app_launch ? 'text-zinc-500' : 'text-zinc-700'
+                                    }`}>
                                     {settings.fix_on_app_launch ? '✓ APPLY_ON_START' : '○ USER_TRIGGERED'}
                                 </div>
                             </div>

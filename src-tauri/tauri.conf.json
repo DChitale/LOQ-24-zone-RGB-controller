@@ -8,10 +8,10 @@
   },
   "package": {
     "productName": "Controller",
-    "version": "0.1.0"
+    "version": "2.1.1"
   },
   "tauri": {
-    "systemTray":{
+    "systemTray": {
       "iconPath": "icons/icon.png",
       "iconAsTemplate": true
     },
@@ -21,7 +21,12 @@
     "bundle": {
       "active": true,
       "identifier": "com.tauri.RGBController",
-      "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.icns", "icons/icon.ico"]
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ]
     },
     "security": {
       "csp": null
