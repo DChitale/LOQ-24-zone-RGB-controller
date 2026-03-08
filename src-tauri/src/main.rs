@@ -201,6 +201,13 @@ fn set_preset(
     parameters: std::collections::HashMap<String, ParameterValue>,
     state: State<AppState>,
 ) -> Result<String, String> {
+    // Save these parameters as user tweaks for this preset
+    if let Ok(mut settings) = crate::settings::load_settings() {
+        if !parameters.is_empty() {
+            settings.preset_tweaks.insert(preset_name.clone(), parameters.clone());
+            let _ = crate::settings::save_settings(&settings);
+        }
+    }
     apply_preset(preset_name, parameters, state.inner())
 }
 
@@ -286,10 +293,6 @@ fn apply_preset(
                     .map_err(|e| e.to_string())?;
 
                 // apply preset parameters if provided
-                let preset_top = preset_config
-                    .parameters
-                    .get("sample_top")
-                    .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None });
                 let preset_left = preset_config
                     .parameters
                     .get("sample_left")
@@ -299,12 +302,10 @@ fn apply_preset(
                     .get("sample_width")
                     .and_then(|v| match v { ParameterValue::Float(f) => Some(*f), _ => None });
 
-                if let (Some(t), Some(l), Some(w)) = (preset_top, preset_left, preset_width) {
-                    sampler.set_sample_top_fraction(t);
+                if let (Some(l), Some(w)) = (preset_left, preset_width) {
                     sampler.set_sample_horizontal_region(l, w);
                 } else if let Ok(s) = crate::settings::load_settings() {
                     // fallback to global settings
-                    sampler.set_sample_top_fraction(s.ambient_sample_top_fraction);
                     sampler.set_sample_horizontal_region(
                         s.ambient_sample_left_fraction,
                         s.ambient_sample_width_fraction,
@@ -686,9 +687,12 @@ fn cycle_preset(app_handle: &tauri::AppHandle) {
 
     let next_effect = &effects[next_index];
     
-    // Here we can either pass default empty parameters or fetch some saved ones
-    // For cycling, we'll try to apply with empty parameters to let defaults take over
-    let parameters = HashMap::new();
+    // Pass persistent parameters if they exist
+    let parameters = settings
+        .preset_tweaks
+        .get(next_effect)
+        .cloned()
+        .unwrap_or_else(HashMap::new);
     
     if let Err(e) = apply_preset(next_effect.clone(), parameters, state.inner()) {
         eprintln!("Failed to cycle to preset {}: {}", next_effect, e);
@@ -708,14 +712,21 @@ fn adjust_preset_parameter(
         params.insert(param_name.clone(), value.clone());
     }
 
+    // Update config persistence
+    if let Ok(mut settings) = crate::settings::load_settings() {
+        let tweaks = settings.preset_tweaks.entry(preset_name.clone()).or_insert_with(HashMap::new);
+        tweaks.insert(param_name.clone(), value.clone());
+        let _ = crate::settings::save_settings(&settings);
+    }
+
     // Recreate the effect with updated parameters
     let preset_config = PresetConfig {
         name: preset_name.clone(),
         parameters: state.current_preset_params.lock().unwrap().clone(),
     };
 
-    // Call set_preset but ignore the result since we want to return ()
-    let _ = set_preset(preset_name, preset_config.parameters, state);
+    // Call apply_preset instead of set_preset so it doesn't double-save the full tweak map incorrectly
+    let _ = apply_preset(preset_name, preset_config.parameters, state.inner());
     Ok(())
 }
 

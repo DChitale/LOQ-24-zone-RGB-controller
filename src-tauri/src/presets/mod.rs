@@ -96,15 +96,6 @@ pub fn get_available_presets() -> Vec<PresetMetadata> {
                 },
                 // Sampling region controls (fractions where 0.0 = top/left, 1.0 = bottom/right)
                 ParameterConfig {
-                    name: "sample_top".to_string(),
-                    label: "Detach the screen from the top section".to_string(),
-                    param_type: ParameterType::Float,
-                    min: 0.0,
-                    max: 1.0,
-                    default: 0.85,
-                    step: 0.01,
-                },
-                ParameterConfig {
                     name: "sample_left".to_string(),
                     label: "Screen sample left".to_string(),
                     param_type: ParameterType::Float,

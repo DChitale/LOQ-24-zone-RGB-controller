@@ -146,7 +146,7 @@ export default function SettingsPage() {
     const addCycleEffect = (effectName: string) => {
         setSettings(s => {
             const current = s.preset_cycle_effects || [];
-            if (current.length >= 6 || current.includes(effectName)) return s;
+            if (current.includes(effectName)) return s;
             return { ...s, preset_cycle_effects: [...current, effectName] };
         });
     };
@@ -400,13 +400,12 @@ export default function SettingsPage() {
                             <div className="pt-6 space-y-2">
                                 <div className="flex justify-between items-center">
                                     <h4 className="text-sm font-light text-zinc-200 uppercase tracking-tight">
-                                        Cycling Presets {(settings.preset_cycle_effects?.length || 0)}/6
+                                        Cycling Presets ({(settings.preset_cycle_effects?.length || 0)})
                                     </h4>
                                     <select
                                         className="bg-transparent border border-zinc-800 text-xs px-2 py-1 outline-none focus:border-zinc-500 rounded-none cursor-pointer"
                                         value=""
                                         onChange={(e) => addCycleEffect(e.target.value)}
-                                        disabled={(settings.preset_cycle_effects?.length || 0) >= 6}
                                     >
                                         <option value="" disabled>+ Add Preset</option>
                                         {presets.map(p => (

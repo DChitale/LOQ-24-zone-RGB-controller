@@ -166,64 +166,79 @@ mod dxgi {
     impl DxgiScreenSampler {
         pub fn new() -> anyhow::Result<Self> {
             unsafe {
-                let mut device = None;
-                let mut context = None;
+                let dxgi_factory: IDXGIFactory1 = CreateDXGIFactory1()?;
+                
+                let mut adapter_index = 0;
+                while let Ok(adapter) = dxgi_factory.EnumAdapters1(adapter_index) {
+                    adapter_index += 1;
+                    
+                    let mut device = None;
+                    let mut context = None;
 
-                D3D11CreateDevice(
-                    None,
-                    D3D_DRIVER_TYPE_HARDWARE,
-                    HMODULE(0),
-                    D3D11_CREATE_DEVICE_BGRA_SUPPORT,
-                    None::<&[_]>,
-                    D3D11_SDK_VERSION,
-                    Some(&mut device),
-                    None,
-                    Some(&mut context),
-                )?;
+                    if D3D11CreateDevice(
+                        &adapter,
+                        D3D_DRIVER_TYPE_UNKNOWN, // Must be UNKNOWN when an adapter is specified
+                        HMODULE(0),
+                        D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+                        None::<&[_]>,
+                        D3D11_SDK_VERSION,
+                        Some(&mut device),
+                        None,
+                        Some(&mut context),
+                    ).is_err() {
+                        continue;
+                    }
+                    
+                    if let (Some(dev), Some(ctx)) = (device, context) {
+                        let mut output_index = 0;
+                        while let Ok(output) = adapter.EnumOutputs(output_index) {
+                            output_index += 1;
+                            
+                            if let Ok(output1) = output.cast::<IDXGIOutput1>() {
+                                // Try to duplicate output. On laptops, this only succeeds on the GPU driving the display.
+                                if let Ok(duplication) = output1.DuplicateOutput(&dev) {
+                                    
+                                    let mut desc = std::mem::MaybeUninit::<DXGI_OUTPUT_DESC>::zeroed();
+                                    output.GetDesc(desc.as_mut_ptr())?;
+                                    let desc = desc.assume_init();
+                                    let width = (desc.DesktopCoordinates.right - desc.DesktopCoordinates.left) as u32;
+                                    let height = (desc.DesktopCoordinates.bottom - desc.DesktopCoordinates.top) as u32;
 
-                let device: ID3D11Device = device.unwrap();
-                let context = context.unwrap();
+                                    let staging_desc = D3D11_TEXTURE2D_DESC {
+                                        Width: width,
+                                        Height: height,
+                                        MipLevels: 1,
+                                        ArraySize: 1,
+                                        Format: DXGI_FORMAT_B8G8R8A8_UNORM,
+                                        SampleDesc: DXGI_SAMPLE_DESC { Count: 1, Quality: 0 },
+                                        Usage: D3D11_USAGE_STAGING,
+                                        BindFlags: 0,
+                                        CPUAccessFlags: D3D11_CPU_ACCESS_READ.0 as u32,
+                                        MiscFlags: 0,
+                                    };
 
-                let dxgi_device: IDXGIDevice = device.cast()?;
-                let adapter: IDXGIAdapter = dxgi_device.GetAdapter()?;
-                let output: IDXGIOutput = adapter.EnumOutputs(0)?;
-                let output1: IDXGIOutput1 = output.cast()?;
+                                    let mut staging = None;
+                                    dev.CreateTexture2D(&staging_desc, None, Some(&mut staging))?;
+                                    
+                                    if let Some(staging_tex) = staging {
+                                        return Ok(Self {
+                                            context: ctx,
+                                            duplication,
+                                            staging: staging_tex,
+                                            width,
+                                            height,
+                                            sample_top_frac: 0.0,
+                                            sample_left_frac: 0.0,
+                                            sample_width_frac: 1.0,
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
-                let mut desc = std::mem::MaybeUninit::<DXGI_OUTPUT_DESC>::zeroed();
-                output.GetDesc(desc.as_mut_ptr())?;
-                let desc = desc.assume_init();
-                let width = (desc.DesktopCoordinates.right - desc.DesktopCoordinates.left) as u32;
-                let height = (desc.DesktopCoordinates.bottom - desc.DesktopCoordinates.top) as u32;
-
-                let duplication = output1.DuplicateOutput(&device)?;
-
-                let staging_desc = D3D11_TEXTURE2D_DESC {
-                    Width: width,
-                    Height: height,
-                    MipLevels: 1,
-                    ArraySize: 1,
-                    Format: DXGI_FORMAT_B8G8R8A8_UNORM,
-                    SampleDesc: DXGI_SAMPLE_DESC { Count: 1, Quality: 0 },
-                    Usage: D3D11_USAGE_STAGING,
-                    BindFlags: 0,
-                    CPUAccessFlags: D3D11_CPU_ACCESS_READ.0 as u32,
-                    MiscFlags: 0,
-                };
-
-                let mut staging = None;
-                device.CreateTexture2D(&staging_desc, None, Some(&mut staging))?;
-                let staging = staging.unwrap();
-
-                Ok(Self {
-                    context,
-                    duplication,
-                    staging,
-                    width,
-                    height,
-                    sample_top_frac: 0.85,
-                    sample_left_frac: 0.0,
-                    sample_width_frac: 1.0,
-                })
+                Err(anyhow::anyhow!("Failed to find an active DXGI adapter and output for screen capture"))
             }
         }
 

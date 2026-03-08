@@ -17,10 +17,6 @@ pub struct AppSettings {
     #[serde(default = "default_brightness_level")]
     pub brightness_level: f32,
 
-    // Ambient sampler: vertical start (fraction 0.0-1.0), horizontal offset (0.0-1.0), and horizontal width (0.0-1.0)
-    #[serde(default = "default_ambient_sample_top")]
-    pub ambient_sample_top_fraction: f32,
-
     #[serde(default = "default_ambient_sample_left")]
     pub ambient_sample_left_fraction: f32,
 
@@ -32,6 +28,9 @@ pub struct AppSettings {
 
     #[serde(default = "default_preset_cycle_effects")]
     pub preset_cycle_effects: Vec<String>,
+
+    #[serde(default = "default_preset_tweaks")]
+    pub preset_tweaks: std::collections::HashMap<String, std::collections::HashMap<String, crate::presets::ParameterValue>>,
 }
 
 impl Default for AppSettings {
@@ -41,11 +40,11 @@ impl Default for AppSettings {
             startup_delay_seconds: 60,
             fix_on_app_launch: true,
             brightness_level: 1.0,
-            ambient_sample_top_fraction: 0.85,
             ambient_sample_left_fraction: 0.0,
             ambient_sample_width_fraction: 1.0,
             preset_cycle_shortcut: None,
             preset_cycle_effects: Vec::new(),
+            preset_tweaks: std::collections::HashMap::new(),
         }
     }
 }
@@ -53,12 +52,15 @@ impl Default for AppSettings {
 /// Default value for `brightness_level` used by serde's `default` attribute
 fn default_brightness_level() -> f32 { 1.0 }
 
-fn default_ambient_sample_top() -> f32 { 0.85 }
 fn default_ambient_sample_left() -> f32 { 0.0 }
 fn default_ambient_sample_width() -> f32 { 1.0 }
 
 fn default_preset_cycle_shortcut() -> Option<String> { None }
 fn default_preset_cycle_effects() -> Vec<String> { Vec::new() }
+
+fn default_preset_tweaks() -> std::collections::HashMap<String, std::collections::HashMap<String, crate::presets::ParameterValue>> {
+    std::collections::HashMap::new()
+}
 
 /// Get the path to the settings file
 fn get_settings_path() -> Result<PathBuf, Box<dyn std::error::Error>> {
