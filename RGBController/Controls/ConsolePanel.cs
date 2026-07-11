@@ -46,12 +46,13 @@ namespace RGBController.Controls
 
         public ConsolePanel()
         {
+            this.AutoScaleMode = AutoScaleMode.Inherit; // Inherit auto-scaling from parent form
             InitializeComponent();
             ApplyTheme();
-
+ 
             scriptEditor.Text = _defaultCode;
             UpdateStats();
-
+ 
             this.Load += ConsolePanel_Load;
         }
 

@@ -169,7 +169,7 @@ namespace RGBController.Controls
             this.parametersFlowPanel.TabIndex = 4;
             this.parametersFlowPanel.SizeChanged += (s, e) =>
             {
-                int targetWidth = Math.Max(260, parametersFlowPanel.ClientSize.Width - 16);
+                int targetWidth = Math.Max(LogicalToDeviceUnits(260), parametersFlowPanel.ClientSize.Width - LogicalToDeviceUnits(16));
                 foreach (Control ctrl in parametersFlowPanel.Controls)
                 {
                     if (ctrl is Panel container)
@@ -187,7 +187,7 @@ namespace RGBController.Controls
                             }
                             else if (child is Label lblHex && child.Name == "hexLabel")
                             {
-                                lblHex.Location = new Point(targetWidth - 130, lblHex.Top);
+                                lblHex.Location = new Point(targetWidth - LogicalToDeviceUnits(130), lblHex.Top);
                             }
                             else if (child is Button btn && child.Name == "pickerButton")
                             {
@@ -541,19 +541,25 @@ namespace RGBController.Controls
 
         private void CreateFloatControl(ParameterConfig param, float currentValue)
         {
-            int targetWidth = Math.Max(260, parametersFlowPanel.ClientSize.Width - 16);
+            int targetWidth = Math.Max(LogicalToDeviceUnits(260), parametersFlowPanel.ClientSize.Width - LogicalToDeviceUnits(16));
+            int containerHeight = LogicalToDeviceUnits(65);
+            int labelHeight = LogicalToDeviceUnits(20);
+            int trackBarHeight = LogicalToDeviceUnits(40);
+            int marginVertical = LogicalToDeviceUnits(4);
+            int marginHorizontal = LogicalToDeviceUnits(8);
+
             var container = new Panel
             {
                 Width = targetWidth,
-                Height = 60,
-                Margin = new Padding(0, 4, 0, 8)
+                Height = containerHeight,
+                Margin = new Padding(0, marginVertical, 0, marginHorizontal)
             };
 
             var label = new Label
             {
                 Text = param.Label.ToUpperInvariant(),
                 Location = new Point(0, 0),
-                Size = new Size(targetWidth - 100, 20),
+                Size = new Size(targetWidth - LogicalToDeviceUnits(100), labelHeight),
                 TextAlign = ContentAlignment.MiddleLeft
             };
             Theme.StyleLabel(label, Theme.FontMonospace, Theme.TextSecondary);
@@ -562,8 +568,8 @@ namespace RGBController.Controls
             {
                 Name = "valLabel",
                 Text = param.Min == param.Max ? "FIXED" : $"{CalculatePercentage(currentValue, param.Min, param.Max)}%",
-                Location = new Point(targetWidth - 90, 0),
-                Size = new Size(90, 20),
+                Location = new Point(targetWidth - LogicalToDeviceUnits(90), 0),
+                Size = new Size(LogicalToDeviceUnits(90), labelHeight),
                 TextAlign = ContentAlignment.MiddleRight
             };
             Theme.StyleLabel(valLabel, Theme.FontMonospace, Theme.TextSecondary);
@@ -572,8 +578,8 @@ namespace RGBController.Controls
             {
                 Name = "trackBar",
                 Minimum = 0,
-                Location = new Point(0, 20),
-                Size = new Size(targetWidth, 45),
+                Location = new Point(0, labelHeight),
+                Size = new Size(targetWidth, trackBarHeight),
                 TickStyle = TickStyle.None,
                 BackColor = Theme.Card
             };
@@ -614,19 +620,29 @@ namespace RGBController.Controls
 
         private void CreateColorControl(ParameterConfig param, Models.Color currentValue)
         {
-            int targetWidth = Math.Max(260, parametersFlowPanel.ClientSize.Width - 16);
+            int targetWidth = Math.Max(LogicalToDeviceUnits(260), parametersFlowPanel.ClientSize.Width - LogicalToDeviceUnits(16));
+            int containerHeight = LogicalToDeviceUnits(36);
+            int labelHeight = LogicalToDeviceUnits(20);
+            int labelY = LogicalToDeviceUnits(8);
+            int hexLabelWidth = LogicalToDeviceUnits(70);
+            int hexLabelX = targetWidth - LogicalToDeviceUnits(130);
+            int buttonWidth = LogicalToDeviceUnits(50);
+            int buttonHeight = LogicalToDeviceUnits(28);
+            int buttonX = targetWidth - LogicalToDeviceUnits(50);
+            int buttonY = LogicalToDeviceUnits(4);
+
             var container = new Panel
             {
                 Width = targetWidth,
-                Height = 36,
-                Margin = new Padding(0, 4, 0, 8)
+                Height = containerHeight,
+                Margin = new Padding(0, LogicalToDeviceUnits(4), 0, LogicalToDeviceUnits(8))
             };
 
             var label = new Label
             {
                 Text = param.Label.ToUpperInvariant(),
-                Location = new Point(0, 8),
-                Size = new Size(targetWidth - 140, 20),
+                Location = new Point(0, labelY),
+                Size = new Size(targetWidth - LogicalToDeviceUnits(140), labelHeight),
                 TextAlign = ContentAlignment.MiddleLeft
             };
             Theme.StyleLabel(label, Theme.FontMonospace, Theme.TextSecondary);
@@ -636,8 +652,8 @@ namespace RGBController.Controls
             {
                 Name = "hexLabel",
                 Text = hexVal,
-                Location = new Point(targetWidth - 130, 8),
-                Size = new Size(70, 20),
+                Location = new Point(hexLabelX, labelY),
+                Size = new Size(hexLabelWidth, labelHeight),
                 TextAlign = ContentAlignment.MiddleRight
             };
             Theme.StyleLabel(hexLabel, Theme.FontMonospace, Theme.TextSecondary);
@@ -645,9 +661,9 @@ namespace RGBController.Controls
             var pickerButton = new Button
             {
                 Name = "pickerButton",
-                Location = new Point(targetWidth - 50, 4),
-                Width = 50,
-                Height = 28,
+                Location = new Point(buttonX, buttonY),
+                Width = buttonWidth,
+                Height = buttonHeight,
                 BackColor = System.Drawing.Color.FromArgb(currentValue.r, currentValue.g, currentValue.b),
                 FlatStyle = FlatStyle.Flat
             };

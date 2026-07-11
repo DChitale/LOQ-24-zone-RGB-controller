@@ -24,6 +24,10 @@ namespace RGBController.Controls
         private MainForm parentForm;
 
         // UI Controls
+        private FlowLayoutPanel leftFlowPanel;
+        private FlowLayoutPanel rightFlowPanel;
+        private FlowLayoutPanel automationFlowPanel;
+
         private Label titleLabel;
         private Label descLabel;
         private Label versionLabel;
@@ -62,6 +66,7 @@ namespace RGBController.Controls
         public SettingsPanel(MainForm parent)
         {
             this.parentForm = parent;
+            this.AutoScaleMode = AutoScaleMode.Inherit; // Inherit auto-scaling from parent form
             InitializeComponent();
             ApplyTheme();
 
@@ -74,6 +79,10 @@ namespace RGBController.Controls
 
         private void InitializeComponent()
         {
+            this.leftFlowPanel = new FlowLayoutPanel();
+            this.rightFlowPanel = new FlowLayoutPanel();
+            this.automationFlowPanel = new FlowLayoutPanel();
+
             this.titleLabel = new Label();
             this.descLabel = new Label();
             this.versionLabel = new Label();
@@ -113,6 +122,9 @@ namespace RGBController.Controls
             this.delayPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.delayTrackBar)).BeginInit();
             this.statusPanel.SuspendLayout();
+            this.leftFlowPanel.SuspendLayout();
+            this.rightFlowPanel.SuspendLayout();
+            this.automationFlowPanel.SuspendLayout();
             this.SuspendLayout();
 
             // 
@@ -165,25 +177,48 @@ namespace RGBController.Controls
             this.statusTextLabel.TextAlign = ContentAlignment.MiddleLeft;
 
             // 
+            // leftFlowPanel
+            // 
+            this.leftFlowPanel.FlowDirection = FlowDirection.TopDown;
+            this.leftFlowPanel.WrapContents = false;
+            this.leftFlowPanel.Location = new Point(24, 160);
+            this.leftFlowPanel.Name = "leftFlowPanel";
+            this.leftFlowPanel.Size = new Size(420, 410);
+            this.leftFlowPanel.TabIndex = 4;
+            this.leftFlowPanel.Margin = new Padding(0);
+            this.leftFlowPanel.Padding = new Padding(0);
+
+            // 
+            // rightFlowPanel
+            // 
+            this.rightFlowPanel.FlowDirection = FlowDirection.TopDown;
+            this.rightFlowPanel.WrapContents = false;
+            this.rightFlowPanel.Location = new Point(468, 160);
+            this.rightFlowPanel.Name = "rightFlowPanel";
+            this.rightFlowPanel.Size = new Size(376, 410);
+            this.rightFlowPanel.TabIndex = 5;
+            this.rightFlowPanel.Margin = new Padding(0);
+            this.rightFlowPanel.Padding = new Padding(0);
+
+            // 
             // overrideLabel
             // 
             this.overrideLabel.AutoSize = true;
-            this.overrideLabel.Location = new Point(24, 160);
             this.overrideLabel.Name = "overrideLabel";
             this.overrideLabel.Size = new Size(119, 15);
             this.overrideLabel.Text = "MANUAL_OVERRIDE";
+            this.overrideLabel.Margin = new Padding(0, 0, 0, 8);
 
             // 
             // overrideCard
             // 
-            this.overrideCard.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             this.overrideCard.BorderStyle = BorderStyle.FixedSingle;
             this.overrideCard.Controls.Add(this.takeControlButton);
             this.overrideCard.Controls.Add(this.overrideDesc);
-            this.overrideCard.Location = new Point(24, 180);
             this.overrideCard.Name = "overrideCard";
             this.overrideCard.Size = new Size(420, 110);
-            this.overrideCard.TabIndex = 4;
+            this.overrideCard.TabIndex = 0;
+            this.overrideCard.Margin = new Padding(0, 0, 0, 16);
 
             // 
             // overrideDesc
@@ -210,36 +245,45 @@ namespace RGBController.Controls
             // automationLabel
             // 
             this.automationLabel.AutoSize = true;
-            this.automationLabel.Location = new Point(24, 305);
             this.automationLabel.Name = "automationLabel";
             this.automationLabel.Size = new Size(160, 15);
             this.automationLabel.Text = "AUTOMATION_PARAMETERS";
+            this.automationLabel.Margin = new Padding(0, 0, 0, 8);
 
             // 
             // automationCard
             // 
-            this.automationCard.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             this.automationCard.BorderStyle = BorderStyle.FixedSingle;
-            this.automationCard.Controls.Add(this.fixOnAppLaunchCheckBox);
-            this.automationCard.Controls.Add(this.launchOnStartupCheckBox);
-            this.automationCard.Controls.Add(this.delayPanel);
-            this.automationCard.Controls.Add(this.autoFixCheckBox);
-            this.automationCard.Location = new Point(24, 325);
+            this.automationCard.Controls.Add(this.automationFlowPanel);
             this.automationCard.Name = "automationCard";
-            this.automationCard.Size = new Size(420, 280);
-            this.automationCard.TabIndex = 5;
+            this.automationCard.Size = new Size(420, 250);
+            this.automationCard.TabIndex = 1;
+            this.automationCard.Margin = new Padding(0, 0, 0, 0);
+            this.automationCard.AutoSize = true;
+            this.automationCard.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+
+            // 
+            // automationFlowPanel
+            // 
+            this.automationFlowPanel.FlowDirection = FlowDirection.TopDown;
+            this.automationFlowPanel.WrapContents = false;
+            this.automationFlowPanel.Dock = DockStyle.Fill;
+            this.automationFlowPanel.Padding = new Padding(16);
+            this.automationFlowPanel.Name = "automationFlowPanel";
+            this.automationFlowPanel.AutoSize = true;
+            this.automationFlowPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
 
             // 
             // autoFixCheckBox
             // 
             this.autoFixCheckBox.AutoSize = true;
-            this.autoFixCheckBox.Location = new Point(16, 16);
             this.autoFixCheckBox.Name = "autoFixCheckBox";
             this.autoFixCheckBox.Size = new Size(244, 34);
             this.autoFixCheckBox.TabIndex = 0;
             this.autoFixCheckBox.Text = "Auto-Fix on System Startup\nExecute priority swap after login sequence.";
             this.autoFixCheckBox.UseVisualStyleBackColor = true;
             this.autoFixCheckBox.CheckedChanged += new EventHandler(this.AutoFixCheckBox_CheckedChanged);
+            this.autoFixCheckBox.Margin = new Padding(0, 0, 0, 8);
 
             // 
             // delayPanel
@@ -247,11 +291,11 @@ namespace RGBController.Controls
             this.delayPanel.Controls.Add(this.delayValueLabel);
             this.delayPanel.Controls.Add(this.delayTrackBar);
             this.delayPanel.Controls.Add(this.delayLabel);
-            this.delayPanel.Location = new Point(16, 60);
             this.delayPanel.Name = "delayPanel";
             this.delayPanel.Size = new Size(388, 100);
             this.delayPanel.TabIndex = 1;
             this.delayPanel.Visible = false;
+            this.delayPanel.Margin = new Padding(0, 0, 0, 8);
 
             // 
             // delayLabel
@@ -289,39 +333,36 @@ namespace RGBController.Controls
             // launchOnStartupCheckBox
             // 
             this.launchOnStartupCheckBox.AutoSize = true;
-            this.launchOnStartupCheckBox.Location = new Point(16, 180);
             this.launchOnStartupCheckBox.Name = "launchOnStartupCheckBox";
             this.launchOnStartupCheckBox.Size = new Size(260, 34);
             this.launchOnStartupCheckBox.TabIndex = 2;
             this.launchOnStartupCheckBox.Text = "Launch on System Startup\nAutomatically start the app when you log in.";
             this.launchOnStartupCheckBox.UseVisualStyleBackColor = true;
+            this.launchOnStartupCheckBox.Margin = new Padding(0, 8, 0, 8);
 
             // 
             // fixOnAppLaunchCheckBox
             // 
             this.fixOnAppLaunchCheckBox.AutoSize = true;
-            this.fixOnAppLaunchCheckBox.Location = new Point(16, 220);
             this.fixOnAppLaunchCheckBox.Name = "fixOnAppLaunchCheckBox";
             this.fixOnAppLaunchCheckBox.Size = new Size(260, 34);
             this.fixOnAppLaunchCheckBox.TabIndex = 3;
             this.fixOnAppLaunchCheckBox.Text = "Fix on Application Launch\nApply override when control panel initializes.";
             this.fixOnAppLaunchCheckBox.UseVisualStyleBackColor = true;
+            this.fixOnAppLaunchCheckBox.Margin = new Padding(0, 8, 0, 0);
 
             // 
             // hotkeyLabel
             // 
-            this.hotkeyLabel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             this.hotkeyLabel.AutoSize = true;
-            this.hotkeyLabel.Location = new Point(468, 160);
             this.hotkeyLabel.Name = "hotkeyLabel";
             this.hotkeyLabel.Size = new Size(140, 15);
             this.hotkeyLabel.Text = "PRESET_CYCLE_HOTKEY";
+            this.hotkeyLabel.Margin = new Padding(0, 0, 0, 8);
 
             // 
             // shortcutButton
             // 
-            this.shortcutButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            this.shortcutButton.Location = new Point(468, 180);
             this.shortcutButton.Name = "shortcutButton";
             this.shortcutButton.Size = new Size(376, 36);
             this.shortcutButton.TabIndex = 6;
@@ -329,54 +370,50 @@ namespace RGBController.Controls
             this.shortcutButton.UseVisualStyleBackColor = true;
             this.shortcutButton.Click += new EventHandler(this.ShortcutButton_Click);
             this.shortcutButton.KeyDown += new KeyEventHandler(this.ShortcutButton_KeyDown);
+            this.shortcutButton.Margin = new Padding(0, 0, 0, 16);
 
             // 
             // cycleLabel
             // 
-            this.cycleLabel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             this.cycleLabel.AutoSize = true;
-            this.cycleLabel.Location = new Point(468, 230);
             this.cycleLabel.Name = "cycleLabel";
             this.cycleLabel.Size = new Size(125, 15);
             this.cycleLabel.Text = "Cycling Presets (0)";
+            this.cycleLabel.Margin = new Padding(0, 0, 0, 8);
 
             // 
             // addPresetComboBox
             // 
-            this.addPresetComboBox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             this.addPresetComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            this.addPresetComboBox.Location = new Point(468, 250);
             this.addPresetComboBox.Name = "addPresetComboBox";
             this.addPresetComboBox.Size = new Size(376, 23);
             this.addPresetComboBox.TabIndex = 7;
             this.addPresetComboBox.SelectedIndexChanged += new EventHandler(this.AddPresetComboBox_SelectedIndexChanged);
+            this.addPresetComboBox.Margin = new Padding(0, 0, 0, 16);
 
             // 
             // cycleListBox
             // 
-            this.cycleListBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             this.cycleListBox.BorderStyle = BorderStyle.FixedSingle;
-            this.cycleListBox.Location = new Point(468, 290);
             this.cycleListBox.Name = "cycleListBox";
             this.cycleListBox.Size = new Size(376, 190);
             this.cycleListBox.TabIndex = 8;
+            this.cycleListBox.Margin = new Padding(0, 0, 0, 10);
 
             // 
             // removeCyclePresetButton
             // 
-            this.removeCyclePresetButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            this.removeCyclePresetButton.Location = new Point(468, 490);
             this.removeCyclePresetButton.Name = "removeCyclePresetButton";
             this.removeCyclePresetButton.Size = new Size(376, 28);
             this.removeCyclePresetButton.TabIndex = 9;
             this.removeCyclePresetButton.Text = "Remove Selected Effect";
             this.removeCyclePresetButton.UseVisualStyleBackColor = true;
             this.removeCyclePresetButton.Click += new EventHandler(this.RemoveCyclePresetButton_Click);
+            this.removeCyclePresetButton.Margin = new Padding(0, 0, 0, 0);
 
             // 
             // saveConfigButton
             // 
-            this.saveConfigButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             this.saveConfigButton.Location = new Point(24, 580);
             this.saveConfigButton.Name = "saveConfigButton";
             this.saveConfigButton.Size = new Size(820, 36);
@@ -385,21 +422,26 @@ namespace RGBController.Controls
             this.saveConfigButton.UseVisualStyleBackColor = true;
             this.saveConfigButton.Click += new EventHandler(this.SaveSettings_Click);
 
+            // Add controls to their respective FlowLayoutPanels
+            this.leftFlowPanel.Controls.Add(this.overrideLabel);
+            this.leftFlowPanel.Controls.Add(this.overrideCard);
+            this.leftFlowPanel.Controls.Add(this.automationLabel);
+            this.leftFlowPanel.Controls.Add(this.automationCard);
+
+            this.rightFlowPanel.Controls.Add(this.hotkeyLabel);
+            this.rightFlowPanel.Controls.Add(this.shortcutButton);
+            this.rightFlowPanel.Controls.Add(this.cycleLabel);
+            this.rightFlowPanel.Controls.Add(this.addPresetComboBox);
+            this.rightFlowPanel.Controls.Add(this.cycleListBox);
+            this.rightFlowPanel.Controls.Add(this.removeCyclePresetButton);
+
             // 
             // SettingsPanel
             // 
             this.BackColor = Color.FromArgb(5, 5, 5);
             this.Controls.Add(this.saveConfigButton);
-            this.Controls.Add(this.removeCyclePresetButton);
-            this.Controls.Add(this.cycleListBox);
-            this.Controls.Add(this.addPresetComboBox);
-            this.Controls.Add(this.cycleLabel);
-            this.Controls.Add(this.shortcutButton);
-            this.Controls.Add(this.hotkeyLabel);
-            this.Controls.Add(this.automationCard);
-            this.Controls.Add(this.automationLabel);
-            this.Controls.Add(this.overrideCard);
-            this.Controls.Add(this.overrideLabel);
+            this.Controls.Add(this.leftFlowPanel);
+            this.Controls.Add(this.rightFlowPanel);
             this.Controls.Add(this.statusPanel);
             this.Controls.Add(this.versionLabel);
             this.Controls.Add(this.descLabel);
@@ -415,6 +457,12 @@ namespace RGBController.Controls
             this.delayPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.delayTrackBar)).EndInit();
             this.statusPanel.ResumeLayout(false);
+            this.leftFlowPanel.ResumeLayout(false);
+            this.leftFlowPanel.PerformLayout();
+            this.rightFlowPanel.ResumeLayout(false);
+            this.rightFlowPanel.PerformLayout();
+            this.automationFlowPanel.ResumeLayout(false);
+            this.automationFlowPanel.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
         }

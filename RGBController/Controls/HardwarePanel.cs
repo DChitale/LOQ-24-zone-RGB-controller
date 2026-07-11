@@ -23,6 +23,7 @@ namespace RGBController.Controls
 
         public HardwarePanel()
         {
+            this.AutoScaleMode = AutoScaleMode.Inherit; // Inherit auto-scaling from parent form
             InitializeComponent();
             ApplyTheme();
         }
