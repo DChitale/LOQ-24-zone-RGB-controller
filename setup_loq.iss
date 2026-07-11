@@ -23,7 +23,7 @@ SetupIconFile=RGBController\Assets\AppIcon.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesInstallIn64BitMode=x64compatible
 ; Ensure the install dir is fully removed on uninstall
 UninstallFilesDir={app}\uninstall
 ; Close the running app before uninstalling

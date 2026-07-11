@@ -15,10 +15,10 @@ namespace RGBController
         public static readonly Color TextSecondary = Color.FromArgb(161, 161, 170); // #a1a1aa
         public static readonly Color TextMuted = Color.FromArgb(82, 82, 91); // #52525b
 
-        public static readonly Font FontTitle = GetFont("Segoe UI Variable Display", 14f, FontStyle.Bold, new Font("Segoe UI", 14f, FontStyle.Bold));
-        public static readonly Font FontHeader = GetFont("Segoe UI Variable Display", 11f, FontStyle.Bold, new Font("Segoe UI", 11f, FontStyle.Bold));
-        public static readonly Font FontBody = GetFont("Segoe UI Variable Display", 9f, FontStyle.Regular, new Font("Segoe UI", 9f, FontStyle.Regular));
-        public static readonly Font FontMonospace = new Font("Consolas", 10f, FontStyle.Regular);
+        public static readonly Font FontTitle = GetFont("Segoe UI", 14f, FontStyle.Regular, new Font("Segoe UI", 14f, FontStyle.Regular));
+        public static readonly Font FontHeader = GetFont("Segoe UI", 10.5f, FontStyle.Regular, new Font("Segoe UI", 10.5f, FontStyle.Regular));
+        public static readonly Font FontBody = GetFont("Segoe UI", 9f, FontStyle.Regular, new Font("Segoe UI", 9f, FontStyle.Regular));
+        public static readonly Font FontMonospace = new Font("Consolas", 9f, FontStyle.Regular);
 
         private static Font GetFont(string familyName, float size, FontStyle style, Font fallback)
         {

@@ -210,14 +210,14 @@ namespace RGBController.Controls
             }
 
             // Icon/label: "PRESET" subtitle
-            using (var subtitleFont = new Font("Consolas", 8f, FontStyle.Regular))
+            using (var subtitleFont = new Font("Segoe UI", 8f, FontStyle.Regular))
             using (var subtitleBrush = new SolidBrush(Color.FromArgb(161, 161, 170))) // TextSecondary
             {
                 g.DrawString("PRESET ACTIVE", subtitleFont, subtitleBrush, 16, 10);
             }
 
             // Preset name
-            using (var nameFont = new Font("Segoe UI Variable Display", 13f, FontStyle.Bold))
+            using (var nameFont = new Font("Segoe UI", 13f, FontStyle.Regular))
             using (var nameBrush = new SolidBrush(Color.White))
             {
                 var nameRect = new RectangleF(16, 28, this.Width - 32, 32);

@@ -23,6 +23,8 @@ namespace RGBController.Controls
         private volatile bool _pendingInvalidate = false; // throttle BeginInvoke after sleep/resume
 
         // UI Controls
+        private FlowLayoutPanel leftFlowPanel;
+        private Panel rightContainerPanel;
         private KeyboardVisualizer keyboardVisualizer;
         private Label presetLabel;
         private ComboBox presetComboBox;
@@ -37,6 +39,7 @@ namespace RGBController.Controls
         public HomePanel(MainForm parent)
         {
             this.parentForm = parent;
+            this.AutoScaleMode = AutoScaleMode.Inherit; // Inherit auto-scaling from parent form
             InitializeComponent();
             ApplyTheme();
 
@@ -55,6 +58,8 @@ namespace RGBController.Controls
 
         private void InitializeComponent()
         {
+            this.leftFlowPanel = new FlowLayoutPanel();
+            this.rightContainerPanel = new Panel();
             this.keyboardVisualizer = new KeyboardVisualizer(this);
             this.presetLabel = new Label();
             this.presetComboBox = new ComboBox();
@@ -66,11 +71,30 @@ namespace RGBController.Controls
             this.zoneToolTip = new ToolTip();
 
             this.SuspendLayout();
+            this.leftFlowPanel.SuspendLayout();
+            this.rightContainerPanel.SuspendLayout();
+
+            // 
+            // leftFlowPanel
+            // 
+            this.leftFlowPanel.Dock = DockStyle.Left;
+            this.leftFlowPanel.Width = 532;
+            this.leftFlowPanel.FlowDirection = FlowDirection.TopDown;
+            this.leftFlowPanel.WrapContents = false;
+            this.leftFlowPanel.Padding = new Padding(16, 16, 16, 16);
+            this.leftFlowPanel.Name = "leftFlowPanel";
+
+            // 
+            // rightContainerPanel
+            // 
+            this.rightContainerPanel.Dock = DockStyle.Fill;
+            this.rightContainerPanel.Padding = new Padding(0, 16, 16, 16);
+            this.rightContainerPanel.Name = "rightContainerPanel";
 
             // 
             // keyboardVisualizer
             // 
-            this.keyboardVisualizer.Location = new Point(16, 16);
+            this.keyboardVisualizer.Margin = new Padding(0, 0, 0, 16);
             this.keyboardVisualizer.Name = "keyboardVisualizer";
             this.keyboardVisualizer.Size = new Size(500, 220);
             this.keyboardVisualizer.TabIndex = 0;
@@ -78,7 +102,8 @@ namespace RGBController.Controls
             // 
             // presetLabel
             // 
-            this.presetLabel.Location = new Point(16, 252);
+            this.presetLabel.AutoSize = true;
+            this.presetLabel.Margin = new Padding(0, 16, 0, 4);
             this.presetLabel.Name = "presetLabel";
             this.presetLabel.Size = new Size(500, 20);
             this.presetLabel.Text = "ACTIVE LIGHTING PRESET";
@@ -87,7 +112,7 @@ namespace RGBController.Controls
             // 
             // presetComboBox
             // 
-            this.presetComboBox.Location = new Point(16, 276);
+            this.presetComboBox.Margin = new Padding(0, 4, 0, 0);
             this.presetComboBox.Name = "presetComboBox";
             this.presetComboBox.Size = new Size(500, 30);
             this.presetComboBox.ItemHeight = 24;
@@ -100,13 +125,13 @@ namespace RGBController.Controls
             // 
             // presetCardPanel
             // 
-            this.presetCardPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            this.presetCardPanel.Dock = DockStyle.Fill;
             this.presetCardPanel.BorderStyle = BorderStyle.FixedSingle;
             this.presetCardPanel.Controls.Add(this.emptyStateText);
             this.presetCardPanel.Controls.Add(this.parametersFlowPanel);
             this.presetCardPanel.Controls.Add(this.selectedPresetDesc);
             this.presetCardPanel.Controls.Add(this.selectedPresetHeader);
-            this.presetCardPanel.Location = new Point(532, 16);
+            this.presetCardPanel.Location = new Point(0, 0);
             this.presetCardPanel.Name = "presetCardPanel";
             this.presetCardPanel.Size = new Size(332, 572);
             this.presetCardPanel.TabIndex = 2;
@@ -183,17 +208,26 @@ namespace RGBController.Controls
             this.emptyStateText.Text = "SELECT A PRESET TO TWEAK PARAMETERS";
             this.emptyStateText.TextAlign = ContentAlignment.MiddleCenter;
 
+            // Add controls to leftFlowPanel
+            this.leftFlowPanel.Controls.Add(this.keyboardVisualizer);
+            this.leftFlowPanel.Controls.Add(this.presetLabel);
+            this.leftFlowPanel.Controls.Add(this.presetComboBox);
+
+            // Add controls to rightContainerPanel
+            this.rightContainerPanel.Controls.Add(this.presetCardPanel);
+
             // 
             // HomePanel
             // 
             this.BackColor = Color.FromArgb(5, 5, 5);
-            this.Controls.Add(this.presetComboBox);
-            this.Controls.Add(this.presetLabel);
-            this.Controls.Add(this.presetCardPanel);
-            this.Controls.Add(this.keyboardVisualizer);
+            this.Controls.Add(this.rightContainerPanel);
+            this.Controls.Add(this.leftFlowPanel);
             this.Name = "HomePanel";
             this.Size = new Size(880, 604);
 
+            this.leftFlowPanel.ResumeLayout(false);
+            this.leftFlowPanel.PerformLayout();
+            this.rightContainerPanel.ResumeLayout(false);
             this.presetCardPanel.ResumeLayout(false);
             this.presetCardPanel.PerformLayout();
             this.ResumeLayout(false);
