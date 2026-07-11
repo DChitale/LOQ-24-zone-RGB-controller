@@ -63,6 +63,7 @@ namespace RGBController.Controls
         {
             this.parentForm = parent;
             InitializeComponent();
+            LayoutAutomationCard();
             ApplyTheme();
 
             statusTimer = new System.Windows.Forms.Timer();
@@ -617,6 +618,29 @@ namespace RGBController.Controls
         private void AutoFixCheckBox_CheckedChanged(object? sender, EventArgs e)
         {
             delayPanel.Visible = autoFixCheckBox.Checked;
+            LayoutAutomationCard();
+        }
+
+        private void LayoutAutomationCard()
+        {
+            int currentY = 16;
+            
+            this.autoFixCheckBox.Location = new Point(16, currentY);
+            currentY += this.autoFixCheckBox.PreferredSize.Height + 8;
+
+            if (this.delayPanel.Visible)
+            {
+                this.delayPanel.Location = new Point(16, currentY);
+                currentY += this.delayPanel.Height + 8;
+            }
+
+            this.launchOnStartupCheckBox.Location = new Point(16, currentY);
+            currentY += this.launchOnStartupCheckBox.PreferredSize.Height + 8;
+
+            this.fixOnAppLaunchCheckBox.Location = new Point(16, currentY);
+            currentY += this.fixOnAppLaunchCheckBox.PreferredSize.Height + 16;
+
+            this.automationCard.Height = currentY;
         }
 
         private void DelayTrackBar_Scroll(object? sender, EventArgs e)

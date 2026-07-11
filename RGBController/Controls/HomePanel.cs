@@ -183,7 +183,7 @@ namespace RGBController.Controls
                             }
                             else if (child is Label lbl && child.Name == "valLabel")
                             {
-                                lbl.Location = new Point(targetWidth - lbl.Width, lbl.Top);
+                                lbl.Location = new Point(targetWidth - lbl.Width - 8, lbl.Top);
                             }
                             else if (child is Label lblHex && child.Name == "hexLabel")
                             {
@@ -542,18 +542,13 @@ namespace RGBController.Controls
         private void CreateFloatControl(ParameterConfig param, float currentValue)
         {
             int targetWidth = Math.Max(260, parametersFlowPanel.ClientSize.Width - 16);
-            var container = new Panel
-            {
-                Width = targetWidth,
-                Height = 60,
-                Margin = new Padding(0, 4, 0, 8)
-            };
 
             var label = new Label
             {
                 Text = param.Label.ToUpperInvariant(),
                 Location = new Point(0, 0),
-                Size = new Size(targetWidth - 100, 20),
+                AutoSize = true,
+                MaximumSize = new Size(targetWidth - 100, 0),
                 TextAlign = ContentAlignment.MiddleLeft
             };
             Theme.StyleLabel(label, Theme.FontMonospace, Theme.TextSecondary);
@@ -562,17 +557,19 @@ namespace RGBController.Controls
             {
                 Name = "valLabel",
                 Text = param.Min == param.Max ? "FIXED" : $"{CalculatePercentage(currentValue, param.Min, param.Max)}%",
-                Location = new Point(targetWidth - 90, 0),
-                Size = new Size(90, 20),
+                AutoSize = true,
                 TextAlign = ContentAlignment.MiddleRight
             };
             Theme.StyleLabel(valLabel, Theme.FontMonospace, Theme.TextSecondary);
+
+            int labelHeight = Math.Max(20, label.PreferredHeight);
+            valLabel.Location = new Point(targetWidth - valLabel.PreferredWidth - 8, 0);
 
             var trackBar = new TrackBar
             {
                 Name = "trackBar",
                 Minimum = 0,
-                Location = new Point(0, 20),
+                Location = new Point(0, labelHeight),
                 Size = new Size(targetWidth, 45),
                 TickStyle = TickStyle.None,
                 BackColor = Theme.Card
@@ -592,6 +589,7 @@ namespace RGBController.Controls
                 newVal = Math.Clamp(newVal, param.Min, param.Max);
 
                 valLabel.Text = param.Min == param.Max ? "FIXED" : $"{CalculatePercentage(newVal, param.Min, param.Max)}%";
+                valLabel.Location = new Point(targetWidth - valLabel.PreferredWidth - 8, 0);
 
                 try
                 {
@@ -603,6 +601,13 @@ namespace RGBController.Controls
                     SaveParameterTweak(_currentPresetName, param.Name, paramVal);
                 }
                 catch { }
+            };
+
+            var container = new Panel
+            {
+                Width = targetWidth,
+                Height = trackBar.Bottom + 4,
+                Margin = new Padding(0, 4, 0, 8)
             };
 
             container.Controls.Add(label);
