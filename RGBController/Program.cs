@@ -49,6 +49,16 @@ namespace RGBController
 
             ApplicationConfiguration.Initialize();
 
+            // Start LampArray watcher to override disabled settings in OS
+            try
+            {
+                LampArrayManager.StartWatcher();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to start LampArrayManager: {ex.Message}");
+            }
+
             // Initialize Rust backend
             try
             {
@@ -101,6 +111,11 @@ namespace RGBController
             }
             finally
             {
+                try
+                {
+                    LampArrayManager.StopWatcher();
+                }
+                catch {}
                 RgbInterop.rgb_shutdown();
                 if (_appMutex != null)
                 {

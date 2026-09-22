@@ -162,3 +162,55 @@ pub fn set_windows_lighting_on_top() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+pub fn set_light_control_owner(enable: bool) -> Result<(), Box<dyn std::error::Error>> {
+    let value = if enable { 1 } else { 0 };
+    let script = format!(
+        r#"
+        $ErrorActionPreference = "Stop"
+        try {{
+            $obj = Get-CimInstance -Namespace "root\WMI" -ClassName "LENOVO_GAMEZONE_DATA"
+            if ($obj) {{
+                $obj | Invoke-CimMethod -MethodName "SetLightControlOwner" -Arguments @{{ Data = [int]{} }} | Out-Null
+                Write-Output "Success"
+            }} else {{
+                Write-Error "LENOVO_GAMEZONE_DATA instance not found via CIM"
+            }}
+        }} catch {{
+            try {{
+                $obj = Get-WmiObject -Namespace "root\WMI" -Class "LENOVO_GAMEZONE_DATA"
+                if ($obj) {{
+                    $obj.SetLightControlOwner([int]{}) | Out-Null
+                    Write-Output "Success"
+                }} else {{
+                    Write-Error "LENOVO_GAMEZONE_DATA object not found via WMI"
+                }}
+            }} catch {{
+                Write-Error $_.Exception.Message
+            }}
+        }}
+        "#,
+        value, value
+    );
+
+    let output = Command::new("powershell")
+        .args([
+            "-ExecutionPolicy",
+            "Bypass",
+            "-NoProfile",
+            "-NonInteractive",
+            "-WindowStyle",
+            "Hidden",
+            "-Command",
+            &script
+        ])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()?;
+
+    if !output.status.success() {
+        let error = String::from_utf8_lossy(&output.stderr);
+        return Err(error.into());
+    }
+
+    Ok(())
+}

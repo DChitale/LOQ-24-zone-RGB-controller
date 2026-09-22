@@ -88,6 +88,7 @@ pub extern "C" fn rgb_init() -> i32 {
         let mut controller = LedController::new(ui_frame.clone());
         
         let settings = settings::load_settings().unwrap_or_default();
+        let _ = lighting::set_light_control_owner(true);
         let _ = controller.connect();
         controller.set_brightness(settings.brightness_level);
         let _ = controller.flush_buffered();
@@ -223,6 +224,7 @@ pub extern "C" fn rgb_shutdown() {
         let mut controller = state.controller.lock().unwrap();
         controller.fill(Color::black());
         let _ = controller.flush_buffered();
+        let _ = lighting::set_light_control_owner(false);
         controller.disconnect();
     }
 }
@@ -407,12 +409,21 @@ pub extern "C" fn rgb_connect_keyboard(vid: u16, pid: u16) -> i32 {
     if let Some(ref state) = *state_lock {
         let mut controller = state.controller.lock().unwrap();
         controller.disconnect();
+        let _ = lighting::set_light_control_owner(true);
         match controller.connect_device(vid, pid) {
             Ok(_) => 1,
             Err(_) => 0,
         }
     } else {
         0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn rgb_set_light_control_owner(enable: i32) -> i32 {
+    match lighting::set_light_control_owner(enable != 0) {
+        Ok(_) => 1,
+        Err(_) => 0,
     }
 }
 

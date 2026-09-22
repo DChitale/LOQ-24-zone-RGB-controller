@@ -598,14 +598,20 @@ namespace RGBController.Controls
             ShowStatus("PROCESSING OVERRIDE...", true);
             try
             {
-                string result = RgbInterop.SetLightingPriority();
-                if (result.Contains("Error"))
+                int ownerResult = RgbInterop.rgb_set_light_control_owner(1);
+                string priorityResult = RgbInterop.SetLightingPriority();
+
+                if (ownerResult == 1)
                 {
-                    ShowStatus($"✗ OVERRIDE FAILED: {result}", false);
+                    ShowStatus("✓ CONTROL ACQUIRED successfully via WMI direct ownership.", true);
+                }
+                else if (priorityResult.Contains("Error"))
+                {
+                    ShowStatus($"✗ OVERRIDE FAILED: {priorityResult}", false);
                 }
                 else
                 {
-                    ShowStatus("✓ CONTROL ACQUIRED successfully.", true);
+                    ShowStatus("✓ CONTROL ACQUIRED via registry priority fallback.", true);
                 }
             }
             catch (Exception ex)

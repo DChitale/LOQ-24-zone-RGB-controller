@@ -47,6 +47,9 @@ namespace RGBController.Interop
         public static extern int rgb_connect_keyboard(ushort vid, ushort pid);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int rgb_set_light_control_owner(int enable);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rgb_enable_dynamic_lighting();
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
